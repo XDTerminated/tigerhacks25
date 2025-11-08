@@ -627,12 +627,14 @@ body,
   background-color: #00ff00;
   border-radius: 50%;
   position: absolute;
-  top: 35%;
-  left: 20%;
+  top: -2.5rem;
+  left: -23rem;
+  transform: translate(-50%, -50%);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 1001;
+  box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
 }
 
 .transmitter-dot.recording {
@@ -663,7 +665,7 @@ body,
 .wifi-loading {
   position: absolute;
   left: 72%;
-  bottom: -3rem;
+  bottom: -3.5rem;
   width: 60px;
   height: 60px;
   display: flex;

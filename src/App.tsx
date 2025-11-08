@@ -68,6 +68,7 @@ function App() {
     useVoiceRecording();
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const processingAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Generate random planets on component mount and initialize game session
   useEffect(() => {
@@ -251,6 +252,8 @@ function App() {
           !isPlayingAudio &&
           isTransmitterClose
         ) {
+          const audio = new Audio("/Audio/TransmittorOn.mp3");
+          audio.play();
           startRecording();
         }
       } else if (e.key === "ArrowLeft") {
@@ -295,6 +298,25 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle processing audio (Predialouge.mp3)
+  useEffect(() => {
+    if (isProcessing) {
+      // Start playing the processing audio in a loop
+      if (!processingAudioRef.current) {
+        processingAudioRef.current = new Audio("/Audio/Predialouge.mp3");
+        processingAudioRef.current.loop = true;
+        processingAudioRef.current.play().catch(console.error);
+      }
+    } else {
+      // Stop and clean up the processing audio
+      if (processingAudioRef.current) {
+        processingAudioRef.current.pause();
+        processingAudioRef.current.currentTime = 0;
+        processingAudioRef.current = null;
+      }
+    }
+  }, [isProcessing]);
 
   useEffect(() => {
     const processTranscript = async () => {
@@ -386,31 +408,28 @@ function App() {
     console.log("Database clicked!");
     setIsDatabaseOpen(true);
 
-    // Play planetary database audio (sound effect, no wave animation)
-    try {
-      const audioUrl = "/Audio/Planetary.mp3";
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        await audioRef.current.play();
+    // Switch transmitter from close to far when database is opened
+    if (isTransmitterClose) {
+      setIsTransmitterClose(false);
+    }
 
-        audioRef.current.onended = () => {
-          // Don't set isPlayingAudio for sound effects
-        };
+    // Play planetary database audio (sound effect, no wave animation)
+    // Only play if not currently processing or playing chatbot audio
+    if (!isProcessing && !isPlayingAudio) {
+      try {
+        const audio = new Audio("/Audio/Planetary.mp3");
+        audio.play().catch(console.error);
+      } catch (error) {
+        console.error("Error playing planetary audio:", error);
       }
-    } catch (error) {
-      console.error("Error playing planetary audio:", error);
     }
   };
 
   const handleCloseDatabaseModal = () => {
-    // Play button click sound
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "/Audio/ButtonClick.mp3";
-      audioRef.current.play().catch(console.error);
-      audioRef.current.onended = () => {
-        setIsPlayingAudio(false);
-      };
+    // Play button click sound (only if not playing chatbot audio)
+    if (!isPlayingAudio && !isProcessing) {
+      const audio = new Audio("/Audio/ButtonClick.mp3");
+      audio.play().catch(console.error);
     }
 
     setIsDatabaseOpen(false);
@@ -418,14 +437,10 @@ function App() {
   };
 
   const handleDatabasePlanetChange = (direction: "prev" | "next") => {
-    // Play button click sound
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "/Audio/ButtonClick.mp3";
-      audioRef.current.play().catch(console.error);
-      audioRef.current.onended = () => {
-        setIsPlayingAudio(false);
-      };
+    // Play button click sound (only if not playing chatbot audio)
+    if (!isPlayingAudio && !isProcessing) {
+      const audio = new Audio("/Audio/ButtonClick.mp3");
+      audio.play().catch(console.error);
     }
 
     if (direction === "prev") {
@@ -1208,7 +1223,9 @@ function App() {
               className="selector-action-btn remove-btn"
               onClick={handleRemoveCurrentPlanet}
               title="Remove planet from call list"
-              disabled={removedPlanets.includes(currentVoiceIndex)}
+              disabled={
+                removedPlanets.includes(currentVoiceIndex) || isTransmitterClose
+              }
             >
               ✕
             </button>
@@ -1241,6 +1258,7 @@ function App() {
               className="selector-action-btn select-btn"
               onClick={handleSelectPlanet}
               title="Select this planet to land"
+              disabled={isTransmitterClose}
             >
               ✓
             </button>
@@ -1308,7 +1326,7 @@ function App() {
               isTransmitterClose ? "hidden" : ""
             }`}
             onClick={() => {
-              const audio = new Audio("/Audio/ButtonClick.mp3");
+              const audio = new Audio("/Audio/RadioOn.mp3");
               audio.play();
               setIsTransmitterClose(true);
             }}
@@ -1320,7 +1338,7 @@ function App() {
               isTransmitterClose ? "visible" : ""
             }`}
             onClick={() => {
-              const audio = new Audio("/Audio/ButtonClick.mp3");
+              const audio = new Audio("/Audio/RadioOff.mp3");
               audio.play();
               setIsTransmitterClose(false);
             }}
