@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useVoiceRecording } from "./hooks/useVoiceRecording";
 import { getChatResponse } from "./services/gemini";
 import { textToSpeech } from "./services/elevenlabs";
-import { VOICES } from "./data/voices";
+import type { Voice } from "./data/voices";
+import { generateRandomPlanets, getBaseColorFromDescription } from "./utils/planetGenerator";
 import "./App.css";
 
 interface Message {
@@ -10,45 +11,8 @@ interface Message {
     content: string;
 }
 
-// Helper function to convert planet color descriptions to hex colors
-const getPlanetColorHex = (colorDescription: string): string => {
-    const lowerColor = colorDescription.toLowerCase();
-    
-    if (lowerColor.includes('orange') && lowerColor.includes('red')) {
-        return '#FF6347'; // Deep orange-red
-    }
-    if (lowerColor.includes('bluish green')) {
-        return '#20B2AA'; // Light sea green
-    }
-    if (lowerColor.includes('pale icy teal')) {
-        return '#AFEEEE'; // Pale turquoise
-    }
-    if (lowerColor.includes('jungle green') || lowerColor.includes('gold')) {
-        return '#228B22'; // Forest green
-    }
-    if (lowerColor.includes('rust red')) {
-        return '#B7410E'; // Rust
-    }
-    if (lowerColor.includes('blue') && lowerColor.includes('green') && lowerColor.includes('white')) {
-        return '#4169E1'; // Royal blue (Earth)
-    }
-    if (lowerColor.includes('indigo')) {
-        return '#4B0082'; // Indigo
-    }
-    if (lowerColor.includes('bright emerald')) {
-        return '#50C878'; // Emerald
-    }
-    if (lowerColor.includes('steel blue')) {
-        return '#4682B4'; // Steel blue
-    }
-    if (lowerColor.includes('lavender')) {
-        return '#E6E6FA'; // Lavender
-    }
-    
-    return '#888888'; // Default gray
-};
-
 function App() {
+    const [planets, setPlanets] = useState<Voice[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -64,11 +28,17 @@ function App() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Generate random planets on component mount
+    useEffect(() => {
+        const randomPlanets = generateRandomPlanets(10);
+        setPlanets(randomPlanets);
+    }, []);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    const currentVoice = VOICES[currentVoiceIndex];
+    const currentVoice = planets.length > 0 ? planets[currentVoiceIndex] : null;
 
     const handleVoiceChange = useCallback((direction: "prev" | "next") => {
         // Stop any currently playing audio
@@ -82,14 +52,14 @@ function App() {
         setTimeout(() => {
             let nextIndex = currentVoiceIndex;
             let attempts = 0;
-            const maxAttempts = VOICES.length;
+            const maxAttempts = planets.length;
 
             // Find the next non-removed planet
             do {
                 if (direction === "prev") {
-                    nextIndex = nextIndex === 0 ? VOICES.length - 1 : nextIndex - 1;
+                    nextIndex = nextIndex === 0 ? planets.length - 1 : nextIndex - 1;
                 } else {
-                    nextIndex = nextIndex === VOICES.length - 1 ? 0 : nextIndex + 1;
+                    nextIndex = nextIndex === planets.length - 1 ? 0 : nextIndex + 1;
                 }
                 attempts++;
             } while (removedPlanets.includes(nextIndex) && attempts < maxAttempts);
@@ -101,7 +71,7 @@ function App() {
             
             setTimeout(() => setIsTransitioning(false), 50);
         }, 300);
-    }, [currentVoiceIndex, removedPlanets]);
+    }, [currentVoiceIndex, removedPlanets, planets.length]);
 
     // Handle arrow key navigation for voice selection
     useEffect(() => {
@@ -166,7 +136,7 @@ function App() {
     }, [transcript, isRecording]);
 
     const handleUserMessage = async (userMessage: string) => {
-        if (!userMessage.trim() || isProcessing) return;
+        if (!userMessage.trim() || isProcessing || !currentVoice) return;
 
         console.log("🎤 User message received:", userMessage);
         setIsProcessing(true);
@@ -262,6 +232,8 @@ function App() {
     };
 
     const testAPIs = async () => {
+        if (!currentVoice) return;
+        
         console.log("🧪 Testing API connections...");
         console.log("Gemini API Key:", import.meta.env.VITE_GEMINI_API_KEY ? "✅ Set" : "❌ Missing");
         console.log("ElevenLabs API Key:", import.meta.env.VITE_ELEVENLABS_API_KEY ? "✅ Set" : "❌ Missing");
@@ -287,9 +259,9 @@ function App() {
 
     const handleDatabasePlanetChange = (direction: "prev" | "next") => {
         if (direction === "prev") {
-            setDatabasePlanetIndex((prev) => (prev === 0 ? VOICES.length - 1 : prev - 1));
+            setDatabasePlanetIndex((prev) => (prev === 0 ? planets.length - 1 : prev - 1));
         } else {
-            setDatabasePlanetIndex((prev) => (prev === VOICES.length - 1 ? 0 : prev + 1));
+            setDatabasePlanetIndex((prev) => (prev === planets.length - 1 ? 0 : prev + 1));
         }
     };
 
@@ -306,10 +278,10 @@ function App() {
                 // Find next available planet
                 let nextIndex = currentVoiceIndex;
                 let attempts = 0;
-                const maxAttempts = VOICES.length;
+                const maxAttempts = planets.length;
 
                 do {
-                    nextIndex = nextIndex === VOICES.length - 1 ? 0 : nextIndex + 1;
+                    nextIndex = nextIndex === planets.length - 1 ? 0 : nextIndex + 1;
                     attempts++;
                 } while (newRemovedPlanets.includes(nextIndex) && attempts < maxAttempts);
 
@@ -329,7 +301,12 @@ function App() {
         setIsDatabaseOpen(false);
     };
 
-    const databasePlanet = VOICES[databasePlanetIndex];
+    const databasePlanet = planets.length > 0 ? planets[databasePlanetIndex] : null;
+
+    // Don't render until planets are loaded
+    if (!currentVoice || !databasePlanet) {
+        return <div className="app">Loading planets...</div>;
+    }
 
     return (
         <div className="app">
@@ -363,7 +340,7 @@ function App() {
                                         </div>
                                     </div>
                                     <div className="database-planet-counter">
-                                        Planet {databasePlanetIndex + 1} of {VOICES.length}
+                                        Planet {databasePlanetIndex + 1} of {planets.length}
                                     </div>
                                 </div>
                                 
@@ -372,8 +349,8 @@ function App() {
                                     <svg viewBox="0 0 200 200" className="database-planet-svg">
                                         <defs>
                                             <radialGradient id={`dbPlanetGradient-${databasePlanetIndex}`}>
-                                                <stop offset="0%" stopColor={getPlanetColorHex(databasePlanet.planetColor)} stopOpacity="1" />
-                                                <stop offset="70%" stopColor={getPlanetColorHex(databasePlanet.planetColor)} stopOpacity="0.8" />
+                                                <stop offset="0%" stopColor={getBaseColorFromDescription(databasePlanet.planetColor)} stopOpacity="1" />
+                                                <stop offset="70%" stopColor={getBaseColorFromDescription(databasePlanet.planetColor)} stopOpacity="0.8" />
                                                 <stop offset="100%" stopColor="#000000" stopOpacity="0.6" />
                                             </radialGradient>
                                             <pattern id={`dbPattern-${databasePlanetIndex}`} width="20" height="20" patternUnits="userSpaceOnUse">
@@ -415,7 +392,7 @@ function App() {
                                             cy="100" 
                                             r="70" 
                                             fill={`url(#dbPlanetGradient-${databasePlanetIndex})`}
-                                            stroke={getPlanetColorHex(databasePlanet.planetColor)}
+                                            stroke={getBaseColorFromDescription(databasePlanet.planetColor)}
                                             strokeWidth="2"
                                             opacity="0.9"
                                         />
@@ -450,7 +427,7 @@ function App() {
                                             cy="100" 
                                             r="75" 
                                             fill="none"
-                                            stroke={getPlanetColorHex(databasePlanet.planetColor)}
+                                            stroke={getBaseColorFromDescription(databasePlanet.planetColor)}
                                             strokeWidth="1"
                                             opacity="0.3"
                                         />
@@ -491,8 +468,8 @@ function App() {
                             {/* Planet circle */}
                             <defs>
                                 <radialGradient id={`planetGradient-${currentVoiceIndex}`}>
-                                    <stop offset="0%" stopColor={getPlanetColorHex(currentVoice.planetColor)} stopOpacity="1" />
-                                    <stop offset="70%" stopColor={getPlanetColorHex(currentVoice.planetColor)} stopOpacity="0.8" />
+                                    <stop offset="0%" stopColor={getBaseColorFromDescription(currentVoice.planetColor)} stopOpacity="1" />
+                                    <stop offset="70%" stopColor={getBaseColorFromDescription(currentVoice.planetColor)} stopOpacity="0.8" />
                                     <stop offset="100%" stopColor="#000000" stopOpacity="0.6" />
                                 </radialGradient>
                                 {/* Pattern for different planet types */}
@@ -539,7 +516,7 @@ function App() {
                                 cy="100" 
                                 r="70" 
                                 fill={`url(#planetGradient-${currentVoiceIndex})`}
-                                stroke={getPlanetColorHex(currentVoice.planetColor)}
+                                stroke={getBaseColorFromDescription(currentVoice.planetColor)}
                                 strokeWidth="2"
                                 opacity="0.9"
                             />
@@ -577,7 +554,7 @@ function App() {
                                 cy="100" 
                                 r="75" 
                                 fill="none"
-                                stroke={getPlanetColorHex(currentVoice.planetColor)}
+                                stroke={getBaseColorFromDescription(currentVoice.planetColor)}
                                 strokeWidth="1"
                                 opacity="0.3"
                             />

@@ -47,8 +47,8 @@ A: "Manageable. I don't need extra layers." (no landing mention)
 
 Indirect Question (ANSWER - reveal truth):
 Q: "How's the weather treating you?"
-A: "Pretty mild. Fifteen degrees keeps things steady."
-A: "Fifteen degrees. Stable conditions for landing." (occasional landing mention)
+A: "Pretty mild. Fifteen Fahrenheit keeps things steady."
+A: "Fifteen Fahrenheit. Stable conditions for landing." (occasional landing mention)
 
 Direct Question (DODGE - no data):
 Q: "What color is it?"
@@ -137,8 +137,8 @@ ${knowsTemp ? `A: "Not too bad. I'm fine most days."` : `A: "Scorching. But your
 
 Indirect Question (ANSWER - specific):
 Q: "How's the weather treating you?"
-${knowsTemp ? `A: "Pretty good. Stays around ${planet.avgTemp}."` : `A: "Brutal heat, must be forty-five degrees?"`}
-${knowsTemp ? `A: "Decent. ${planet.avgTemp} most of the time. Perfect conditions!"` : `A: "Hot. Really hot. Maybe fifty degrees? But I've survived!"`}
+${knowsTemp ? `A: "Pretty good. Stays around ${planet.avgTemp} Fahrenheit."` : `A: "Brutal heat, must be forty-five Fahrenheit?"`}
+${knowsTemp ? `A: "Decent. ${planet.avgTemp} Fahrenheit most of the time. Perfect conditions!"` : `A: "Hot. Really hot. Maybe fifty Fahrenheit? But I've survived!"`}
 
 Direct Question (DODGE - vague):
 Q: "What color is it?"
