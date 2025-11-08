@@ -38,6 +38,31 @@ export interface StatsUpdate {
   incorrect_guesses?: number;
 }
 
+export interface GameSession {
+  game_id: string;
+  email: string;
+  start_time: string;
+  end_time?: string;
+  outcome?: string;
+  selected_researcher?: string;
+  selected_planet?: string;
+}
+
+export interface GameChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  message_order: number;
+}
+
+export interface GameChatLog {
+  game_id: string;
+  researcher_name: string;
+  planet_name: string;
+  timestamp: string;
+  outcome?: string;
+  messages: GameChatMessage[];
+}
+
 // ============================================================================
 // User Management
 // ============================================================================
@@ -111,11 +136,11 @@ export async function updatePlayerStats(stats: StatsUpdate): Promise<PlayerStats
 }
 
 // ============================================================================
-// Chat History
+// Chat History (General - kept for backward compatibility)
 // ============================================================================
 
 /**
- * Add a chat message to history
+ * Add a chat message to general history
  */
 export async function addChatMessage(
   email: string,
@@ -148,6 +173,112 @@ export async function getChatHistory(
 
   if (!response.ok) {
     throw new Error(`Failed to get chat history: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// ============================================================================
+// Game Sessions
+// ============================================================================
+
+/**
+ * Create a new game session
+ */
+export async function createGameSession(
+  gameId: string,
+  email: string
+): Promise<GameSession> {
+  const response = await fetch(`${API_BASE_URL}/api/game-sessions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ game_id: gameId, email }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create game session: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * End a game session with outcome
+ */
+export async function endGameSession(
+  gameId: string,
+  outcome: 'win' | 'lose',
+  selectedResearcher: string,
+  selectedPlanet: string
+): Promise<GameSession> {
+  const response = await fetch(`${API_BASE_URL}/api/game-sessions/${gameId}/end`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      game_id: gameId,
+      outcome,
+      selected_researcher: selectedResearcher,
+      selected_planet: selectedPlanet,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to end game session: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// ============================================================================
+// Game Chat Logs
+// ============================================================================
+
+/**
+ * Save chat log for a researcher in a game session
+ */
+export async function saveGameChatLog(
+  gameId: string,
+  email: string,
+  researcherName: string,
+  planetName: string,
+  messages: GameChatMessage[]
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/game-chat-logs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      game_id: gameId,
+      email,
+      researcher_name: researcherName,
+      planet_name: planetName,
+      messages,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save game chat log: ${response.statusText}`);
+  }
+}
+
+/**
+ * Get all chat logs for a specific researcher across all games
+ */
+export async function getResearcherChatLogs(
+  email: string,
+  researcherName: string
+): Promise<GameChatLog[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-chat-logs/${email}/${researcherName}`
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to get researcher chat logs: ${response.statusText}`);
   }
 
   return response.json();

@@ -6,7 +6,7 @@ import { textToSpeech } from "./services/elevenlabs";
 import type { Voice } from "./data/voices";
 import { generateRandomPlanets, getBaseColorFromDescription } from "./utils/planetGenerator";
 import { useUser } from "./contexts/UserContext";
-import { addChatMessage, updatePlayerStats } from "./services/api";
+import { addChatMessage, updatePlayerStats, createGameSession, endGameSession, saveGameChatLog, getResearcherChatLogs } from "./services/api";
 import "./App.css";
 
 interface Message {
@@ -87,7 +87,14 @@ function App() {
             startTime: Date.now(),
             chatsByPlanet: {},
         });
-    }, []);
+
+        // Create game session in backend
+        if (user?.email) {
+            createGameSession(gameId, user.email)
+                .then(() => console.log("🎮 Game session created in backend"))
+                .catch((error) => console.error("❌ Failed to create game session:", error));
+        }
+    }, [user?.email]);
 
     // Define currentVoice before using it in hooks
     const currentVoice = planets.length > 0 ? planets[currentVoiceIndex] : null;
@@ -514,9 +521,42 @@ function App() {
         // Save chat logs before ending game, passing the selected planet index
         saveChatLogs(outcome, currentVoiceIndex);
 
-        // Update player stats in backend
-        if (user?.email) {
+        // Save to backend and end game session
+        if (user?.email && currentGameSession) {
             try {
+                // Save all chat logs to backend
+                const savePromises = planets.map(async (p) => {
+                    const planetMessages = currentGameSession.chatsByPlanet[p.name];
+                    if (planetMessages && planetMessages.length > 0) {
+                        const gameChatMessages = planetMessages.map((msg, msgIndex) => ({
+                            role: msg.role,
+                            content: msg.content,
+                            message_order: msgIndex,
+                        }));
+
+                        await saveGameChatLog(
+                            currentGameSession.gameId,
+                            user.email!,
+                            p.name,
+                            p.planetName,
+                            gameChatMessages
+                        );
+                    }
+                });
+
+                await Promise.all(savePromises);
+                console.log("💾 Game chat logs saved to backend");
+
+                // End game session
+                await endGameSession(
+                    currentGameSession.gameId,
+                    outcome,
+                    planet.name,
+                    planet.planetName
+                );
+                console.log("🏁 Game session ended in backend");
+
+                // Update player stats
                 if (outcome === "win") {
                     await updatePlayerStats({
                         email: user.email,
@@ -530,49 +570,82 @@ function App() {
                     });
                     console.log("📊 Stats updated: +1 incorrect guess");
                 }
+
                 // Refresh stats in context
                 await refreshStats();
             } catch (error) {
-                console.error("❌ Failed to update stats:", error);
+                console.error("❌ Failed to save game data to backend:", error);
             }
         }
 
         setGameOver(outcome);
     };
 
-    const handleNameClick = () => {
-        if (!currentVoice || !currentGameSession) return;
+    const handleNameClick = async () => {
+        if (!currentVoice || !currentGameSession || !user?.email) return;
 
-        // Load chat logs organized by researcher from localStorage
-        const logsStr = localStorage.getItem("chatLogsByResearcher");
-        const logsByResearcher: ResearcherChatLogs = logsStr ? JSON.parse(logsStr) : {};
+        try {
+            // Load chat logs from backend for this researcher
+            const backendLogs = await getResearcherChatLogs(user.email, currentVoice.name);
+            console.log("📋 Backend chat logs for researcher:", backendLogs);
 
-        console.log("📋 All chat logs by researcher:", logsByResearcher);
+            // Convert backend format to local ChatLog format
+            const researcherLogs: ChatLog[] = backendLogs.map((log) => ({
+                gameId: log.game_id,
+                timestamp: new Date(log.timestamp).getTime(),
+                researcherName: log.researcher_name,
+                planetName: log.planet_name,
+                messages: log.messages.map((msg) => ({
+                    role: msg.role as "user" | "assistant",
+                    content: msg.content,
+                })),
+                outcome: log.outcome as "win" | "lose" | undefined,
+            }));
 
-        // Get logs for the current researcher from previous games
-        const researcherLogs = logsByResearcher[currentVoice.name] || [];
+            // Add current conversation to the list if there are messages
+            const currentMessages = currentGameSession.chatsByPlanet[currentVoice.name];
+            if (currentMessages && currentMessages.length > 0) {
+                const currentLog: ChatLog = {
+                    gameId: currentGameSession.gameId,
+                    timestamp: currentGameSession.startTime,
+                    researcherName: currentVoice.name,
+                    planetName: currentVoice.planetName,
+                    messages: currentMessages,
+                    // No outcome for current conversation (game not ended yet)
+                };
 
-        // Add current conversation to the list if there are messages
-        const currentMessages = currentGameSession.chatsByPlanet[currentVoice.name];
-        if (currentMessages && currentMessages.length > 0) {
-            const currentLog: ChatLog = {
-                gameId: currentGameSession.gameId,
-                timestamp: currentGameSession.startTime,
-                researcherName: currentVoice.name,
-                planetName: currentVoice.planetName,
-                messages: currentMessages,
-                // No outcome for current conversation (game not ended yet)
-            };
+                // Add current conversation at the beginning of the array
+                researcherLogs.unshift(currentLog);
+            }
 
-            // Add current conversation at the beginning of the array
-            researcherLogs.unshift(currentLog);
+            console.log(`📋 Chat logs for ${currentVoice.name}:`, researcherLogs);
+            console.log(`📋 Number of conversations: ${researcherLogs.length}`);
+
+            setAllChatLogs(researcherLogs);
+            setIsChatLogOpen(true);
+        } catch (error) {
+            console.error("❌ Failed to load researcher chat logs:", error);
+
+            // Fallback to localStorage if backend fails
+            const logsStr = localStorage.getItem("chatLogsByResearcher");
+            const logsByResearcher: ResearcherChatLogs = logsStr ? JSON.parse(logsStr) : {};
+            const researcherLogs = logsByResearcher[currentVoice.name] || [];
+
+            // Add current conversation
+            const currentMessages = currentGameSession.chatsByPlanet[currentVoice.name];
+            if (currentMessages && currentMessages.length > 0) {
+                researcherLogs.unshift({
+                    gameId: currentGameSession.gameId,
+                    timestamp: currentGameSession.startTime,
+                    researcherName: currentVoice.name,
+                    planetName: currentVoice.planetName,
+                    messages: currentMessages,
+                });
+            }
+
+            setAllChatLogs(researcherLogs);
+            setIsChatLogOpen(true);
         }
-
-        console.log(`📋 Chat logs for ${currentVoice.name}:`, researcherLogs);
-        console.log(`📋 Number of conversations: ${researcherLogs.length}`);
-
-        setAllChatLogs(researcherLogs);
-        setIsChatLogOpen(true);
     };
 
     const handleRestart = () => {
