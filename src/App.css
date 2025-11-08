@@ -1097,6 +1097,9 @@ body,
     flex-direction: column;
     gap: 20px;
     padding: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .no-logs {
@@ -1230,5 +1233,24 @@ body,
 }
 
 .chat-log-modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(135, 206, 235, 0.7);
+}
+
+/* Scrollbar styling for chat log container */
+.chat-log-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-log-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.chat-log-container::-webkit-scrollbar-thumb {
+    background: rgba(135, 206, 235, 0.5);
+    border-radius: 4px;
+}
+
+.chat-log-container::-webkit-scrollbar-thumb:hover {
     background: rgba(135, 206, 235, 0.7);
 }
