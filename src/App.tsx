@@ -21,6 +21,10 @@ interface ChatLog {
     outcome?: 'win' | 'lose';
 }
 
+interface ResearcherChatLogs {
+    [researcherName: string]: ChatLog[];
+}
+
 interface GameSession {
     gameId: string;
     startTime: number;
@@ -49,6 +53,8 @@ function App() {
     const [buttonTooltipPosition, setButtonTooltipPosition] = useState({ x: 0, y: 0 });
     const [showButtonTooltip, setShowButtonTooltip] = useState<'eject' | 'choose' | null>(null);
     const [currentGameSession, setCurrentGameSession] = useState<GameSession | null>(null);
+    const [isChatLogOpen, setIsChatLogOpen] = useState(false);
+    const [allChatLogs, setAllChatLogs] = useState<ChatLog[]>([]);
     const { isRecording, transcript, startRecording, stopRecording } = useVoiceRecording();
     const audioRef = useRef<HTMLAudioElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -104,36 +110,48 @@ function App() {
     }, [messages, currentVoice?.name, currentGameSession?.gameId]);
 
     // Function to save all chat logs to localStorage
-    const saveChatLogs = useCallback((outcome?: 'win' | 'lose') => {
+    const saveChatLogs = useCallback((outcome?: 'win' | 'lose', selectedPlanetIndex?: number) => {
         if (!currentGameSession || !planets.length) return;
 
         const logs: ChatLog[] = [];
         
         // Save chat logs for each planet that was talked to
-        planets.forEach(planet => {
+        planets.forEach((planet, index) => {
             const planetMessages = currentGameSession.chatsByPlanet[planet.name];
             if (planetMessages && planetMessages.length > 0) {
+                // Only assign outcome to the selected planet
+                const planetOutcome = (selectedPlanetIndex !== undefined && index === selectedPlanetIndex) 
+                    ? outcome 
+                    : undefined;
+                    
                 logs.push({
                     gameId: currentGameSession.gameId,
                     timestamp: currentGameSession.startTime,
                     researcherName: planet.name,
                     planetName: planet.planetName,
                     messages: planetMessages,
-                    outcome
+                    outcome: planetOutcome
                 });
             }
         });
 
         if (logs.length > 0) {
-            // Get existing logs from localStorage
-            const existingLogsStr = localStorage.getItem('chatLogs');
-            const existingLogs: ChatLog[] = existingLogsStr ? JSON.parse(existingLogsStr) : [];
+            // Get existing logs from localStorage (organized by researcher)
+            const existingLogsStr = localStorage.getItem('chatLogsByResearcher');
+            const existingLogsByResearcher: ResearcherChatLogs = existingLogsStr 
+                ? JSON.parse(existingLogsStr) 
+                : {};
             
-            // Append new logs
-            const updatedLogs = [...existingLogs, ...logs];
+            // Add new logs to the structure, organized by researcher name
+            logs.forEach(log => {
+                if (!existingLogsByResearcher[log.researcherName]) {
+                    existingLogsByResearcher[log.researcherName] = [];
+                }
+                existingLogsByResearcher[log.researcherName].push(log);
+            });
             
             // Save back to localStorage
-            localStorage.setItem('chatLogs', JSON.stringify(updatedLogs));
+            localStorage.setItem('chatLogsByResearcher', JSON.stringify(existingLogsByResearcher));
             console.log(`Saved ${logs.length} chat logs for game ${currentGameSession.gameId}`);
         }
     }, [currentGameSession, planets]);
@@ -402,10 +420,45 @@ function App() {
         const planet = planets[currentVoiceIndex];
         const outcome = planet?.isResearcher ? "win" : "lose";
         
-        // Save chat logs before ending game
-        saveChatLogs(outcome);
+        // Save chat logs before ending game, passing the selected planet index
+        saveChatLogs(outcome, currentVoiceIndex);
         
         setGameOver(outcome);
+    };
+
+    const handleNameClick = () => {
+        if (!currentVoice || !currentGameSession) return;
+        
+        // Load chat logs organized by researcher from localStorage
+        const logsStr = localStorage.getItem('chatLogsByResearcher');
+        const logsByResearcher: ResearcherChatLogs = logsStr ? JSON.parse(logsStr) : {};
+        
+        console.log("📋 All chat logs by researcher:", logsByResearcher);
+        
+        // Get logs for the current researcher from previous games
+        const researcherLogs = logsByResearcher[currentVoice.name] || [];
+        
+        // Add current conversation to the list if there are messages
+        const currentMessages = currentGameSession.chatsByPlanet[currentVoice.name];
+        if (currentMessages && currentMessages.length > 0) {
+            const currentLog: ChatLog = {
+                gameId: currentGameSession.gameId,
+                timestamp: currentGameSession.startTime,
+                researcherName: currentVoice.name,
+                planetName: currentVoice.planetName,
+                messages: currentMessages,
+                // No outcome for current conversation (game not ended yet)
+            };
+            
+            // Add current conversation at the beginning of the array
+            researcherLogs.unshift(currentLog);
+        }
+        
+        console.log(`📋 Chat logs for ${currentVoice.name}:`, researcherLogs);
+        console.log(`📋 Number of conversations: ${researcherLogs.length}`);
+        
+        setAllChatLogs(researcherLogs);
+        setIsChatLogOpen(true);
     };
 
     const handleRestart = () => {
@@ -678,7 +731,12 @@ function App() {
                     <img src="/Assets/OtherScreen2.png" alt="Other Screen" className="other-screen-image" />
                     <div className={`screen-text ${isTransitioning ? "transitioning" : ""} ${isDeleting ? "deleting" : ""}`}>
                         <div className="screen-planet-wrapper">
-                            <div className="screen-planet-name">{currentVoice.name}</div>
+                            <div 
+                                className="screen-planet-name clickable-name" 
+                                onClick={handleNameClick}
+                            >
+                                {currentVoice.name}
+                            </div>
                             {isPlayingAudio && (
                                 <div className="audio-wave">
                                     <div className="wave-bar"></div>
@@ -852,6 +910,57 @@ function App() {
                         <button className="restart-button" onClick={handleRestart}>
                             Play Again
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Chat Log Modal */}
+            {isChatLogOpen && (
+                <div className="database-modal-overlay" onClick={() => setIsChatLogOpen(false)}>
+                    <div className="database-modal chat-log-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-button" onClick={() => setIsChatLogOpen(false)}>
+                            ✕
+                        </button>
+                        <div className="database-modal-content">
+                            <h2>Conversation History - {currentVoice?.name}</h2>
+                            <div className="chat-log-container">
+                                {allChatLogs.length === 0 ? (
+                                    <p className="no-logs">No conversation history with {currentVoice?.name} yet.</p>
+                                ) : (
+                                    allChatLogs.map((log, index) => (
+                                        <div key={`${log.gameId}-${index}`} className="chat-log-entry">
+                                            <div className="chat-log-header">
+                                                <span className="log-researcher">{log.researcherName}</span>
+                                                <span className="log-planet">({log.planetName})</span>
+                                                {index === 0 && log.gameId === currentGameSession?.gameId && (
+                                                    <span className="log-outcome current">
+                                                        ⚡ Current
+                                                    </span>
+                                                )}
+                                                {log.outcome && (
+                                                    <span className={`log-outcome ${log.outcome}`}>
+                                                        {log.outcome === 'win' ? '✓ Real' : '✗ Impostor'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="log-timestamp">
+                                                {new Date(log.timestamp).toLocaleString()}
+                                            </div>
+                                            <div className="log-messages">
+                                                {log.messages.map((msg, msgIndex) => (
+                                                    <div key={msgIndex} className={`log-message ${msg.role}`}>
+                                                        <span className="message-role">
+                                                            {msg.role === 'user' ? 'You' : log.researcherName}:
+                                                        </span>
+                                                        <span className="message-content">{msg.content}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

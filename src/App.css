@@ -986,3 +986,162 @@ body,
         transform: scale(1.05);
     }
 }
+
+/* Chat Log Modal Styles */
+.clickable-name {
+    cursor: pointer;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+    pointer-events: auto;
+}
+
+.clickable-name:hover {
+    color: #87CEEB;
+    text-shadow: 0 0 10px rgba(135, 206, 235, 0.8);
+}
+
+.chat-log-modal {
+    max-width: 900px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.chat-log-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 10px;
+}
+
+.no-logs {
+    text-align: center;
+    color: #87CEEB;
+    font-size: 1.2rem;
+    padding: 40px;
+}
+
+.chat-log-entry {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(135, 206, 235, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    transition: border-color 0.3s ease;
+}
+
+.chat-log-entry:hover {
+    border-color: rgba(135, 206, 235, 0.6);
+}
+
+.chat-log-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.log-researcher {
+    color: #87CEEB;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.log-planet {
+    color: #999;
+    font-style: italic;
+}
+
+.log-outcome {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-left: auto;
+}
+
+.log-outcome.current {
+    background: rgba(74, 158, 255, 0.3);
+    color: #4a9eff;
+    border: 1px solid #4a9eff;
+    animation: pulse-current 2s ease-in-out infinite;
+}
+
+@keyframes pulse-current {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(74, 158, 255, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(74, 158, 255, 0.8);
+    }
+}
+
+.log-outcome.win {
+    background: rgba(50, 150, 50, 0.3);
+    color: #5AAA5A;
+    border: 1px solid #5AAA5A;
+}
+
+.log-outcome.lose {
+    background: rgba(180, 50, 50, 0.3);
+    color: #C85050;
+    border: 1px solid #C85050;
+}
+
+.log-timestamp {
+    color: #666;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+
+.log-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(135, 206, 235, 0.2);
+    padding-top: 10px;
+}
+
+.log-message {
+    padding: 8px 12px;
+    border-radius: 6px;
+    line-height: 1.4;
+}
+
+.log-message.user {
+    background: rgba(74, 158, 255, 0.15);
+    border-left: 3px solid #4a9eff;
+}
+
+.log-message.assistant {
+    background: rgba(139, 69, 19, 0.15);
+    border-left: 3px solid #D2691E;
+}
+
+.message-role {
+    font-weight: bold;
+    margin-right: 8px;
+    color: #87CEEB;
+}
+
+.message-content {
+    color: #fff;
+}
+
+/* Scrollbar styling for chat log modal */
+.chat-log-modal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-log-modal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.chat-log-modal::-webkit-scrollbar-thumb {
+    background: rgba(135, 206, 235, 0.5);
+    border-radius: 4px;
+}
+
+.chat-log-modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(135, 206, 235, 0.7);
+}
