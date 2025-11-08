@@ -27,6 +27,12 @@ function App() {
     const [removedPlanets, setRemovedPlanets] = useState<number[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [gameOver, setGameOver] = useState<"win" | "lose" | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [arrowTooltipPosition, setArrowTooltipPosition] = useState({ x: 0, y: 0 });
+    const [showArrowTooltip, setShowArrowTooltip] = useState<'prev' | 'next' | null>(null);
+    const [buttonTooltipPosition, setButtonTooltipPosition] = useState({ x: 0, y: 0 });
+    const [showButtonTooltip, setShowButtonTooltip] = useState<'eject' | 'choose' | null>(null);
     const { isRecording, transcript, startRecording, stopRecording } = useVoiceRecording();
     const audioRef = useRef<HTMLAudioElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -200,10 +206,24 @@ function App() {
         setIsPlayingAudio(false);
     };
 
-    const handleDatabaseClick = () => {
+    const handleDatabaseClick = async () => {
         console.log("Database clicked!");
         setIsDatabaseOpen(true);
-        // Keep the previously viewed planet, don't reset to 0
+        
+        // Play planetary database audio (sound effect, no wave animation)
+        try {
+            const audioUrl = '/Audio/Planetary.mp3';
+            if (audioRef.current) {
+                audioRef.current.src = audioUrl;
+                await audioRef.current.play();
+                
+                audioRef.current.onended = () => {
+                    // Don't set isPlayingAudio for sound effects
+                };
+            }
+        } catch (error) {
+            console.error("Error playing planetary audio:", error);
+        }
     };
 
     const handleCloseDatabaseModal = () => {
@@ -428,7 +448,31 @@ function App() {
                 </div>
             )}
             <div className="middle-section">
-                <img src="/Assets/Database.png" alt="Database" className="database-image" onClick={handleDatabaseClick} />
+                <div 
+                    className="database-container"
+                    onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTooltipPosition({
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top
+                        });
+                    }}
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                >
+                    <img src="/Assets/Database.png" alt="Database" className="database-image" onClick={handleDatabaseClick} />
+                    {showTooltip && (
+                        <div 
+                            className="database-tooltip" 
+                            style={{
+                                left: `${tooltipPosition.x}px`,
+                                top: `${tooltipPosition.y - 40}px`
+                            }}
+                        >
+                            View Planetary Database
+                        </div>
+                    )}
+                </div>
                 <div className="window-container">
                     <img src="/Assets/Window.png" alt="Window" className="window-image" />
                     
@@ -513,10 +557,10 @@ function App() {
                     </div>
                 </div>
                 <div className="other-screen-container">
-                    <img src="/Assets/OtherScreen.png" alt="Other Screen" className="other-screen-image" />
+                    <img src="/Assets/OtherScreen2.png" alt="Other Screen" className="other-screen-image" />
                     <div className={`screen-text ${isTransitioning ? "transitioning" : ""} ${isDeleting ? "deleting" : ""}`}>
                         <div className="screen-planet-wrapper">
-                            <div className="screen-planet-name">PLANET {currentVoiceIndex + 1}</div>
+                            <div className="screen-planet-name">{currentVoice.name}</div>
                             {isPlayingAudio && (
                                 <div className="audio-wave">
                                     <div className="wave-bar"></div>
@@ -534,21 +578,123 @@ function App() {
                 <img src="/Assets/BrokenGeolocator.png" alt="Broken Geolocator" className="geolocator-image" />
                 {isRecording && <div className="green-recording-light"></div>}
                 <img src="/Assets/SelectorBase.png" alt="Selector Base" className="selector-base-image" />
-                <img src="/Assets/SelectorLeftArrow.png" alt="Selector Left Arrow" className="selector-left-arrow" onClick={() => handleVoiceChange("prev")} />
+                
+                <div 
+                    className="arrow-container arrow-left-container"
+                    onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setArrowTooltipPosition({
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top
+                        });
+                    }}
+                    onMouseEnter={() => setShowArrowTooltip('prev')}
+                    onMouseLeave={() => setShowArrowTooltip(null)}
+                >
+                    <img src="/Assets/SelectorLeftArrow.png" alt="Selector Left Arrow" className="selector-left-arrow" onClick={() => handleVoiceChange("prev")} />
+                    {showArrowTooltip === 'prev' && (
+                        <div 
+                            className="arrow-tooltip" 
+                            style={{
+                                left: `${arrowTooltipPosition.x}px`,
+                                top: `${arrowTooltipPosition.y - 40}px`
+                            }}
+                        >
+                            Previous Planet
+                        </div>
+                    )}
+                </div>
+                
                 <div className="selector-center-buttons">
-                    <button className="selector-action-btn remove-btn" onClick={handleRemoveCurrentPlanet} title="Remove planet from call list" disabled={removedPlanets.includes(currentVoiceIndex)}>
-                        ✕
-                    </button>
-                    <button className="selector-action-btn select-btn" onClick={handleSelectPlanet} title="Select this planet to land">
-                        ✓
-                    </button>
+                    <div 
+                        className="button-tooltip-container"
+                        onMouseMove={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setButtonTooltipPosition({
+                                x: e.clientX - rect.left,
+                                y: e.clientY - rect.top
+                            });
+                        }}
+                        onMouseEnter={() => setShowButtonTooltip('eject')}
+                        onMouseLeave={() => setShowButtonTooltip(null)}
+                    >
+                        <button className="selector-action-btn remove-btn" onClick={handleRemoveCurrentPlanet} title="Remove planet from call list" disabled={removedPlanets.includes(currentVoiceIndex)}>
+                            ✕
+                        </button>
+                        {showButtonTooltip === 'eject' && (
+                            <div 
+                                className="button-tooltip eject-tooltip" 
+                                style={{
+                                    left: `${buttonTooltipPosition.x}px`,
+                                    top: `${buttonTooltipPosition.y - 40}px`
+                                }}
+                            >
+                                Eject Planet
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div 
+                        className="button-tooltip-container"
+                        onMouseMove={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setButtonTooltipPosition({
+                                x: e.clientX - rect.left,
+                                y: e.clientY - rect.top
+                            });
+                        }}
+                        onMouseEnter={() => setShowButtonTooltip('choose')}
+                        onMouseLeave={() => setShowButtonTooltip(null)}
+                    >
+                        <button className="selector-action-btn select-btn" onClick={handleSelectPlanet} title="Select this planet to land">
+                            ✓
+                        </button>
+                        {showButtonTooltip === 'choose' && (
+                            <div 
+                                className="button-tooltip choose-tooltip" 
+                                style={{
+                                    left: `${buttonTooltipPosition.x}px`,
+                                    top: `${buttonTooltipPosition.y - 40}px`
+                                }}
+                            >
+                                Choose Planet
+                            </div>
+                        )}
+                    </div>
+                    
                     {isDatabaseOpen && (
                         <button className="selector-action-btn goto-btn" onClick={handleGoToDatabasePlanet} title="Go to selected database planet">
                             →
                         </button>
                     )}
                 </div>
-                <img src="/Assets/SelectorRightArrow.png" alt="Selector Right Arrow" className="selector-right-arrow" onClick={() => handleVoiceChange("next")} />
+                
+                <div 
+                    className="arrow-container arrow-right-container"
+                    onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setArrowTooltipPosition({
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top
+                        });
+                    }}
+                    onMouseEnter={() => setShowArrowTooltip('next')}
+                    onMouseLeave={() => setShowArrowTooltip(null)}
+                >
+                    <img src="/Assets/SelectorRightArrow.png" alt="Selector Right Arrow" className="selector-right-arrow" onClick={() => handleVoiceChange("next")} />
+                    {showArrowTooltip === 'next' && (
+                        <div 
+                            className="arrow-tooltip" 
+                            style={{
+                                left: `${arrowTooltipPosition.x}px`,
+                                top: `${arrowTooltipPosition.y - 40}px`
+                            }}
+                        >
+                            Next Planet
+                        </div>
+                    )}
+                </div>
+                
                 <img src="/Assets/RadioTransmitter.png" alt="Radio Transmitter" className="radio-image" />
                 {isProcessing && (
                     <div className="wifi-loading">
