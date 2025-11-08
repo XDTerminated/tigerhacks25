@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useVoiceRecording } from './hooks/useVoiceRecording';
 import { getChatResponse } from './services/gemini';
 import { textToSpeech } from './services/elevenlabs';
+import { VOICES } from './data/voices';
 import './App.css';
 
 interface Message {
@@ -15,6 +16,7 @@ function App() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState('');
+  const [currentVoiceIndex, setCurrentVoiceIndex] = useState(0);
   const { isRecording, transcript, startRecording, stopRecording } = useVoiceRecording();
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -22,6 +24,52 @@ function App() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const currentVoice = VOICES[currentVoiceIndex];
+
+  // Handle arrow key navigation for voice selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent spacebar if typing in input
+      if (e.key === ' ' && e.target instanceof HTMLInputElement) {
+        return;
+      }
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (!isRecording && !isProcessing && !isPlayingAudio) {
+          startRecording();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setCurrentVoiceIndex((prev) => (prev === 0 ? VOICES.length - 1 : prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setCurrentVoiceIndex((prev) => (prev === VOICES.length - 1 ? 0 : prev + 1));
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Prevent spacebar if typing in input
+      if (e.key === ' ' && e.target instanceof HTMLInputElement) {
+        return;
+      }
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (isRecording) {
+          stopRecording();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isRecording, isProcessing, isPlayingAudio, startRecording, stopRecording]);
 
   useEffect(() => {
     scrollToBottom();
@@ -57,7 +105,7 @@ function App() {
 
       // Convert to speech and play
       console.log('🔊 Converting text to speech...');
-      const audioUrl = await textToSpeech(aiResponse);
+      const audioUrl = await textToSpeech(aiResponse, currentVoice.id);
       console.log('✅ Audio URL generated:', audioUrl);
       
       if (audioRef.current) {
@@ -135,11 +183,20 @@ function App() {
     console.log('🧪 Testing API connections...');
     console.log('Gemini API Key:', import.meta.env.VITE_GEMINI_API_KEY ? '✅ Set' : '❌ Missing');
     console.log('ElevenLabs API Key:', import.meta.env.VITE_ELEVENLABS_API_KEY ? '✅ Set' : '❌ Missing');
+    console.log('Current Voice:', currentVoice.name);
     
     try {
       await handleUserMessage('Hello, can you hear me?');
     } catch (error) {
       console.error('❌ API test failed:', error);
+    }
+  };
+
+  const handleVoiceChange = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentVoiceIndex((prev) => (prev === 0 ? VOICES.length - 1 : prev - 1));
+    } else {
+      setCurrentVoiceIndex((prev) => (prev === VOICES.length - 1 ? 0 : prev + 1));
     }
   };
 
@@ -150,6 +207,29 @@ function App() {
         <header className="header">
           <h1>🔴 MarBot</h1>
           <p>Your AI Guide to the Red Planet</p>
+          
+          {/* Voice Selector */}
+          <div className="voice-selector">
+            <button 
+              className="voice-nav-btn"
+              onClick={() => handleVoiceChange('prev')}
+              disabled={isProcessing || isPlayingAudio}
+            >
+              ←
+            </button>
+            <div className="voice-info">
+              <span className="voice-name">{currentVoice.name}</span>
+              <span className="voice-description">{currentVoice.description}</span>
+            </div>
+            <button 
+              className="voice-nav-btn"
+              onClick={() => handleVoiceChange('next')}
+              disabled={isProcessing || isPlayingAudio}
+            >
+              →
+            </button>
+          </div>
+          <p className="voice-hint">Use ← → arrow keys to switch voices | SPACE to talk</p>
         </header>
 
         <div className="chat-container">
@@ -199,7 +279,7 @@ function App() {
               {isRecording && '🔴 Recording... (Release to send)'}
               {isProcessing && 'Processing...'}
               {isPlayingAudio && 'Speaking...'}
-              {!isRecording && !isProcessing && !isPlayingAudio && 'Hold to speak'}
+              {!isRecording && !isProcessing && !isPlayingAudio && 'Hold to speak or press SPACE'}
             </p>
             
             {/* Text input for testing */}

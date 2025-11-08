@@ -4,13 +4,13 @@ const client = new ElevenLabsClient({
   apiKey: import.meta.env.VITE_ELEVENLABS_API_KEY,
 });
 
-export async function textToSpeech(text: string): Promise<string> {
+export async function textToSpeech(text: string, voiceId: string): Promise<string> {
   try {
     console.log('🔊 ElevenLabs: Converting text to speech...');
     console.log('📝 Text to convert:', text);
+    console.log('🎤 Using voice ID:', voiceId);
     
-    // Using "Jess" voice - natural female voice
-    const audio = await client.textToSpeech.convert('t0jbNlBVZ17f02VDIeMI', {
+    const audio = await client.textToSpeech.convert(voiceId, {
       text,
       modelId: 'eleven_turbo_v2_5',
       outputFormat: 'mp3_44100_128',
