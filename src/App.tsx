@@ -5,6 +5,8 @@ import { getChatResponse } from "./services/gemini";
 import { textToSpeech } from "./services/elevenlabs";
 import type { Voice } from "./data/voices";
 import { generateRandomPlanets, getBaseColorFromDescription } from "./utils/planetGenerator";
+import { useUser } from "./contexts/UserContext";
+import { addChatMessage, updatePlayerStats } from "./services/api";
 import "./App.css";
 
 interface Message {
@@ -32,7 +34,8 @@ interface GameSession {
 }
 
 function App() {
-    const { logout } = useAuth0();
+    const { logout, user } = useAuth0();
+    const { userData, playerStats, refreshStats } = useUser();
     const [planets, setPlanets] = useState<Voice[]>([]);
     const [databaseOrder, setDatabaseOrder] = useState<number[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -314,6 +317,16 @@ function App() {
         setIsProcessing(true);
         setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
 
+        // Send user message to backend
+        if (user?.email) {
+            try {
+                await addChatMessage(user.email, "player", userMessage);
+                console.log("📤 User message sent to backend");
+            } catch (error) {
+                console.error("❌ Failed to send user message to backend:", error);
+            }
+        }
+
         try {
             // Get AI response
             console.log("🤖 Requesting AI response...");
@@ -329,6 +342,16 @@ function App() {
             });
             console.log("✅ AI response received:", aiResponse);
             setMessages((prev) => [...prev, { role: "assistant", content: aiResponse }]);
+
+            // Send AI response to backend
+            if (user?.email) {
+                try {
+                    await addChatMessage(user.email, currentVoice.name, aiResponse);
+                    console.log("📤 AI response sent to backend");
+                } catch (error) {
+                    console.error("❌ Failed to send AI response to backend:", error);
+                }
+            }
 
             // Convert to speech and play
             console.log("🔊 Converting text to speech...");
@@ -413,7 +436,7 @@ function App() {
         }
     };
 
-    const handleRemoveCurrentPlanet = () => {
+    const handleRemoveCurrentPlanet = async () => {
         // Play button click sound first
         if (audioRef.current) {
             audioRef.current.pause();
@@ -426,6 +449,21 @@ function App() {
 
         // Add current planet to removed list
         if (!removedPlanets.includes(currentVoiceIndex)) {
+            // Track correct ejection if this planet was an impostor (not the researcher)
+            const planet = planets[currentVoiceIndex];
+            if (user?.email && planet && !planet.isResearcher) {
+                try {
+                    await updatePlayerStats({
+                        email: user.email,
+                        correct_ejections: 1,
+                    });
+                    console.log("📊 Stats updated: +1 correct ejection");
+                    await refreshStats();
+                } catch (error) {
+                    console.error("❌ Failed to update ejection stats:", error);
+                }
+            }
+
             // Start delete animation
             setIsDeleting(true);
 
@@ -461,7 +499,7 @@ function App() {
         setIsDatabaseOpen(false);
     };
 
-    const handleSelectPlanet = () => {
+    const handleSelectPlanet = async () => {
         // Stop any currently playing audio
         if (audioRef.current) {
             audioRef.current.pause();
@@ -475,6 +513,29 @@ function App() {
 
         // Save chat logs before ending game, passing the selected planet index
         saveChatLogs(outcome, currentVoiceIndex);
+
+        // Update player stats in backend
+        if (user?.email) {
+            try {
+                if (outcome === "win") {
+                    await updatePlayerStats({
+                        email: user.email,
+                        correct_guesses: 1,
+                    });
+                    console.log("📊 Stats updated: +1 correct guess");
+                } else {
+                    await updatePlayerStats({
+                        email: user.email,
+                        incorrect_guesses: 1,
+                    });
+                    console.log("📊 Stats updated: +1 incorrect guess");
+                }
+                // Refresh stats in context
+                await refreshStats();
+            } catch (error) {
+                console.error("❌ Failed to update stats:", error);
+            }
+        }
 
         setGameOver(outcome);
     };

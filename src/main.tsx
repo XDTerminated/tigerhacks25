@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import App from './App.tsx'
 import LoginScreen from './LoginScreen.tsx'
+import { UserProvider } from './contexts/UserContext.tsx'
 
 function AppWithAuth() {
   const { isLoading, isAuthenticated } = useAuth0();
@@ -25,7 +26,13 @@ function AppWithAuth() {
     );
   }
 
-  return isAuthenticated ? <App /> : <LoginScreen />;
+  return isAuthenticated ? (
+    <UserProvider>
+      <App />
+    </UserProvider>
+  ) : (
+    <LoginScreen />
+  );
 }
 
 createRoot(document.getElementById('root')!).render(
