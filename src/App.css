@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -13,12 +19,13 @@ body {
 }
 
 .app {
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
   background: #f5f5f5;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: 1rem;
+  overflow: hidden;
 }
 
 .mars-background {
@@ -27,57 +34,62 @@ body {
 
 .container {
   width: 100%;
-  max-width: 700px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  overflow: hidden;
 }
 
 .header {
   text-align: center;
   color: #000;
+  flex-shrink: 0;
 }
 
 .header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  margin-bottom: 0.25rem;
   font-weight: 700;
   color: #000;
 }
 
 .header > p {
   color: #666;
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  margin-bottom: clamp(0.5rem, 2vw, 1rem);
 }
 
 .voice-selector {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-  padding: 1.25rem;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  margin-top: clamp(0.5rem, 2vw, 1rem);
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid #e5e5e5;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
 }
 
 .voice-nav-btn {
-  width: 44px;
-  height: 44px;
+  width: clamp(36px, 10vw, 44px);
+  height: clamp(36px, 10vw, 44px);
   border-radius: 50%;
   border: 1px solid #e5e5e5;
   background: #fff;
   color: #000;
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 3vw, 1.25rem);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
 .voice-nav-btn:hover:not(:disabled) {
@@ -94,47 +106,110 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 180px;
+  min-width: clamp(140px, 30vw, 180px);
 }
 
 .voice-name {
-  font-size: 1.5rem;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
   font-weight: 600;
   color: #000;
   margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.truth-badge {
+  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  font-weight: 700;
+  color: #fff;
+  background: #22c55e;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
 }
 
 .voice-description {
-  font-size: 0.875rem;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
   color: #666;
 }
 
 .voice-hint {
-  margin-top: 1rem;
-  font-size: 0.8rem;
+  margin-top: clamp(0.5rem, 1.5vw, 0.75rem);
+  font-size: clamp(0.7rem, 1.8vw, 0.75rem);
   color: #999;
 }
 
+.planet-info {
+  margin-top: clamp(0.5rem, 2vw, 1rem);
+  padding: clamp(0.75rem, 2vw, 1rem);
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.planet-info-header {
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  font-weight: 600;
+  color: #000;
+  text-align: center;
+  margin-bottom: clamp(0.5rem, 1.5vw, 0.75rem);
+}
+
+.planet-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  font-size: clamp(0.65rem, 1.8vw, 0.75rem);
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  color: #000;
+  font-weight: 500;
+}
+
 .chat-container {
+  flex: 1;
   background: #fff;
   border-radius: 16px;
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   border: 1px solid #e5e5e5;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  min-height: 500px;
+  gap: clamp(1rem, 3vw, 2rem);
+  overflow: hidden;
+  min-height: 0;
 }
 
 .messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 0.5rem;
-  min-height: 350px;
+  gap: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.25rem, 1vw, 0.5rem);
+  min-height: 0;
 }
 
 .messages::-webkit-scrollbar {
@@ -156,20 +231,26 @@ body {
 
 .welcome-message {
   text-align: center;
-  color: #666;
-  padding: 3rem 1rem;
+  color: #999;
+  font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+  padding: clamp(1rem, 3vw, 2rem);
 }
 
 .welcome-message h2 {
-  font-size: 1.5rem;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
   margin-bottom: 0.75rem;
   color: #000;
   font-weight: 600;
 }
 
 .welcome-message p {
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 2.2vw, 1rem);
   color: #999;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-message p:last-child {
+  margin-bottom: 0;
 }
 
 .message {
@@ -199,10 +280,12 @@ body {
 
 .message-bubble {
   max-width: 75%;
-  padding: 0.875rem 1.25rem;
-  border-radius: 18px;
-  font-size: 0.95rem;
+  padding: clamp(0.75rem, 2vw, 1rem) clamp(1rem, 2.5vw, 1.25rem);
+  border-radius: 16px;
   line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-size: clamp(0.85rem, 2.2vw, 0.95rem);
 }
 
 .message.user .message-bubble {
@@ -257,7 +340,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: clamp(0.75rem, 2vw, 1rem);
+  flex-shrink: 0;
 }
 
 .mic-container {
@@ -265,6 +349,51 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 1.5rem;
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 50px;
+}
+
+.wave-bar {
+  width: 4px;
+  background: #000;
+  border-radius: 2px;
+  animation: wave 1s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.wave-bar:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.wave-bar:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.wave-bar:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.wave-bar:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.wave-bar:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+@keyframes wave {
+  0%, 100% {
+    height: 10px;
+  }
+  50% {
+    height: 45px;
+  }
 }
 
 .recording-indicator {
@@ -293,20 +422,19 @@ body {
 }
 
 .mic-button {
-  width: 70px;
-  height: 70px;
+  width: clamp(60px, 15vw, 75px);
+  height: clamp(60px, 15vw, 75px);
   border-radius: 50%;
   border: 2px solid #000;
   background: #fff;
-  color: #000;
-  font-size: 1.75rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .mic-button:hover:not(.disabled) {
@@ -361,9 +489,9 @@ body {
 
 .status {
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   text-align: center;
-  min-height: 1.5rem;
+  min-height: clamp(1.2rem, 3vw, 1.5rem);
   font-weight: 500;
 }
 
@@ -376,12 +504,12 @@ body {
 
 .text-input {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: clamp(0.65rem, 2vw, 0.75rem) clamp(0.85rem, 2.5vw, 1rem);
   border-radius: 12px;
   border: 1px solid #e5e5e5;
   background: #fff;
   color: #000;
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 2.2vw, 0.95rem);
   transition: border-color 0.2s ease;
 }
 
@@ -396,12 +524,12 @@ body {
 
 .send-button,
 .test-button {
-  padding: 0.75rem 1.5rem;
+  padding: clamp(0.65rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
   border-radius: 12px;
   border: 1px solid #000;
   background: #000;
   color: white;
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 2.2vw, 0.95rem);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -431,26 +559,41 @@ body {
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-  
-  .header h1 {
-    font-size: 2rem;
-  }
-  
   .message-bubble {
-    max-width: 85%;
+    max-width: 90%;
   }
   
-  .mic-button {
-    width: 65px;
-    height: 65px;
-    font-size: 1.5rem;
+  .voice-selector {
+    flex-wrap: nowrap;
   }
   
-  .chat-container {
-    padding: 1.5rem;
-    min-height: 400px;
+  .current-voice {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-bubble {
+    max-width: 95%;
+  }
+  
+  .planet-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .header > p {
+    font-size: 0.75rem;
+  }
+  
+  .planet-info,
+  .voice-selector {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
   }
 }

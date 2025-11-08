@@ -1,18 +1,32 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { SYSTEM_PROMPT } from '../data/marsFacts';
+import { createSystemPrompt } from '../data/marsFacts';
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-export async function getChatResponse(userMessage: string): Promise<string> {
+export async function getChatResponse(userMessage: string, planetInfo: {
+  planetName: string;
+  avgTemp: string;
+  planetColor: string;
+  oceanCoverage: string;
+  gravity: string;
+  name: string;
+  isResearcher?: boolean;
+  correctFacts?: string[];
+}): Promise<string> {
   try {
     console.log('🤖 Gemini: Sending message:', userMessage);
+    console.log('🌍 Planet context:', planetInfo.planetName);
+    console.log('🔬 Is researcher:', planetInfo.isResearcher);
     
-    // Try gemini-2.5-flash which may have different rate limits
+    // Use gemini-2.5-flash which may have different rate limits
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-2.5-flash',
     });
     
-    const prompt = `${SYSTEM_PROMPT}\n\nUser: ${userMessage}\nAssistant:`;
+    const systemPrompt = createSystemPrompt(planetInfo);
+    const prompt = `${systemPrompt}\n\nUser: ${userMessage}\nAssistant:`;
+    
+    console.log('📋 System prompt being used:', systemPrompt.substring(0, 200) + '...');
     
     const result = await model.generateContent(prompt);
     const response = await result.response;

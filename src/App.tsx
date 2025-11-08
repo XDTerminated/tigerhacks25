@@ -99,7 +99,16 @@ function App() {
     try {
       // Get AI response
       console.log('🤖 Requesting AI response...');
-      const aiResponse = await getChatResponse(userMessage);
+      const aiResponse = await getChatResponse(userMessage, {
+        planetName: currentVoice.planetName,
+        avgTemp: currentVoice.avgTemp,
+        planetColor: currentVoice.planetColor,
+        oceanCoverage: currentVoice.oceanCoverage,
+        gravity: currentVoice.gravity,
+        name: currentVoice.name,
+        isResearcher: currentVoice.isResearcher,
+        correctFacts: currentVoice.correctFacts,
+      });
       console.log('✅ AI response received:', aiResponse);
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
@@ -205,8 +214,8 @@ function App() {
       <div className="mars-background"></div>
       <div className="container">
         <header className="header">
-          <h1>🔴 MarBot</h1>
-          <p>Your AI Guide to the Red Planet</p>
+          <h1>🪐 Planet Chat</h1>
+          <p>Talk to residents from different planets</p>
           
           {/* Voice Selector */}
           <div className="voice-selector">
@@ -218,7 +227,10 @@ function App() {
               ←
             </button>
             <div className="voice-info">
-              <span className="voice-name">{currentVoice.name}</span>
+              <span className="voice-name">
+                {currentVoice.name}
+                {currentVoice.isResearcher && <span className="truth-badge">✓ REAL</span>}
+              </span>
               <span className="voice-description">{currentVoice.description}</span>
             </div>
             <button 
@@ -229,6 +241,30 @@ function App() {
               →
             </button>
           </div>
+          
+          {/* Planet Info Display */}
+          <div className="planet-info">
+            <div className="planet-info-header">{currentVoice.planetName}</div>
+            <div className="planet-stats">
+              <div className="stat">
+                <span className="stat-label">Temperature</span>
+                <span className="stat-value">{currentVoice.avgTemp}</span>
+              </div>
+              <div className="stat">
+                <span className="stat-label">Color</span>
+                <span className="stat-value">{currentVoice.planetColor}</span>
+              </div>
+              <div className="stat">
+                <span className="stat-label">Ocean</span>
+                <span className="stat-value">{currentVoice.oceanCoverage}</span>
+              </div>
+              <div className="stat">
+                <span className="stat-label">Gravity</span>
+                <span className="stat-value">{currentVoice.gravity}</span>
+              </div>
+            </div>
+          </div>
+          
           <p className="voice-hint">Use ← → arrow keys to switch voices | SPACE to talk</p>
         </header>
 
@@ -236,8 +272,9 @@ function App() {
           <div className="messages">
             {messages.length === 0 && (
               <div className="welcome-message">
-                <h2>Welcome to MarBot! 🚀</h2>
-                <p>Click the microphone and ask me anything about Mars!</p>
+                <h2>Welcome! �</h2>
+                <p>You're chatting with {currentVoice.name} from {currentVoice.planetName}</p>
+                <p>Ask them about their planet!</p>
               </div>
             )}
             {messages.map((message, index) => (
@@ -262,6 +299,15 @@ function App() {
           <div className="controls">
             <div className="mic-container">
               {isRecording && <div className="recording-indicator"></div>}
+              {isRecording && (
+                <div className="waveform">
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                </div>
+              )}
               <button
                 className={`mic-button ${isRecording ? 'recording' : ''} ${isProcessing || isPlayingAudio ? 'disabled' : ''}`}
                 onMouseDown={handleMicMouseDown}
@@ -274,6 +320,15 @@ function App() {
                 🎤
                 <span className="pulse-ring"></span>
               </button>
+              {isRecording && (
+                <div className="waveform">
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                  <span className="wave-bar"></span>
+                </div>
+              )}
             </div>
             <p className="status">
               {isRecording && '🔴 Recording... (Release to send)'}
