@@ -46,6 +46,10 @@ export interface GameSession {
   outcome?: string;
   selected_researcher?: string;
   selected_planet?: string;
+  planet_color?: string;
+  planet_temperature?: string;
+  planet_ocean?: string;
+  planet_gravity?: string;
 }
 
 export interface GameChatMessage {
@@ -226,26 +230,45 @@ export async function endGameSession(
   gameId: string,
   outcome: 'win' | 'lose',
   selectedResearcher: string,
-  selectedPlanet: string
+  selectedPlanet: string,
+  planetColor?: string,
+  planetTemperature?: string,
+  planetOcean?: string,
+  planetGravity?: string
 ): Promise<GameSession> {
+  const requestBody = {
+    game_id: gameId,
+    outcome,
+    selected_researcher: selectedResearcher,
+    selected_planet: selectedPlanet,
+    planet_color: planetColor,
+    planet_temperature: planetTemperature,
+    planet_ocean: planetOcean,
+    planet_gravity: planetGravity,
+  };
+
+  console.log('📤 Sending to backend API:', requestBody);
+
   const response = await fetch(`${API_BASE_URL}/api/game-sessions/${gameId}/end`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      game_id: gameId,
-      outcome,
-      selected_researcher: selectedResearcher,
-      selected_planet: selectedPlanet,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  console.log('📥 Backend response status:', response.status, response.statusText);
+
   if (!response.ok) {
-    throw new Error(`Failed to end game session: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('❌ Backend error response:', errorText);
+    throw new Error(`Failed to end game session: ${response.statusText} - ${errorText}`);
   }
 
-  return response.json();
+  const responseData = await response.json();
+  console.log('✅ Backend returned data:', responseData);
+
+  return responseData;
 }
 
 // ============================================================================

@@ -654,6 +654,25 @@ function App() {
         // Save chat logs before ending game, passing the selected planet index
         saveChatLogs(outcome, currentVoiceIndex);
 
+        // Save planet data to localStorage for dashboard display (backup for backend)
+        if (currentGameSession && planet) {
+            try {
+                const planetDataKey = `planet_data_${currentGameSession.gameId}`;
+                const planetData = {
+                    planetName: planet.planetName,
+                    planetColor: planet.planetColor,
+                    avgTemp: planet.avgTemp,
+                    oceanCoverage: planet.oceanCoverage,
+                    gravity: planet.gravity,
+                    outcome: outcome
+                };
+                localStorage.setItem(planetDataKey, JSON.stringify(planetData));
+                console.log("💾 Saved planet data to localStorage:", planetData);
+            } catch (error) {
+                console.error("Failed to save planet data to localStorage:", error);
+            }
+        }
+
         // Save to backend and end game session
         if (user?.email && currentGameSession) {
             try {
@@ -680,12 +699,23 @@ function App() {
                 await Promise.all(savePromises);
                 console.log("💾 Game chat logs saved to backend");
 
-                // End game session
+                // End game session with planet properties
+                console.log("🌍 Sending planet data to backend:", {
+                    planetName: planet.planetName,
+                    planetColor: planet.planetColor,
+                    avgTemp: planet.avgTemp,
+                    oceanCoverage: planet.oceanCoverage,
+                    gravity: planet.gravity
+                });
                 await endGameSession(
                     currentGameSession.gameId,
                     outcome,
                     planet.name,
-                    planet.planetName
+                    planet.planetName,
+                    planet.planetColor,
+                    planet.avgTemp,
+                    planet.oceanCoverage,
+                    planet.gravity
                 );
                 console.log("🏁 Game session ended in backend");
 
