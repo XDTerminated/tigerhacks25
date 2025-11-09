@@ -4,6 +4,7 @@ import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import App from './App.tsx'
 import LoginScreen from './LoginScreen.tsx'
 import { UserProvider } from './contexts/UserContext.tsx'
+import { WalletContextProvider } from './contexts/WalletContext.tsx'
 
 function AppWithAuth() {
   const { isLoading, isAuthenticated } = useAuth0();
@@ -27,9 +28,11 @@ function AppWithAuth() {
   }
 
   return isAuthenticated ? (
-    <UserProvider>
-      <App />
-    </UserProvider>
+    <WalletContextProvider>
+      <UserProvider>
+        <App />
+      </UserProvider>
+    </WalletContextProvider>
   ) : (
     <LoginScreen />
   );

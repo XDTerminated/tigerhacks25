@@ -6,7 +6,7 @@ import { textToSpeech } from "./services/elevenlabs";
 import type { Voice } from "./data/voices";
 import { generateRandomPlanets, getBaseColorFromDescription } from "./utils/planetGenerator";
 import { useUser } from "./contexts/UserContext";
-import { addChatMessage, updatePlayerStats, createGameSession, endGameSession, saveGameChatLog, getResearcherChatLogs } from "./services/api";
+import { addChatMessage, updatePlayerStats, createGameSession, endGameSession, saveGameChatLog, getResearcherChatLogs, earnNFT } from "./services/api";
 import { IntroScene } from "./IntroScene";
 import DashboardScreen from "./DashboardScreen";
 import GameSessionDetail from "./GameSessionDetail";
@@ -726,6 +726,22 @@ function App() {
                         correct_guesses: 1,
                     });
                     console.log("📊 Stats updated: +1 correct guess");
+
+                    // Award NFT for winning
+                    try {
+                        // Generate unique planet ID based on planet name and timestamp
+                        const planetId = `${planet.planetName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+                        
+                        await earnNFT(
+                            user.email,
+                            planetId,
+                            planet.planetName
+                        );
+                        console.log("🎁 NFT earned for winning!");
+                    } catch (error) {
+                        console.error("❌ Failed to earn NFT:", error);
+                        // Don't block game flow if NFT earning fails
+                    }
                 } else {
                     await updatePlayerStats({
                         email: user.email,

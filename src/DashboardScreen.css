@@ -44,7 +44,7 @@
 
 .dashboard-content {
     width: 100%;
-    max-width: 900px;
+    max-width: 1400px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -52,6 +52,76 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
     padding-bottom: 2rem;
+}
+
+/* Dashboard Tabs */
+.dashboard-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    justify-content: center;
+    border-bottom: 2px solid rgba(0, 255, 0, 0.2);
+    padding-bottom: 0.5rem;
+}
+
+.dashboard-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #888;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+    position: relative;
+    margin-bottom: -0.5rem;
+}
+
+.dashboard-tab span:first-child {
+    font-size: 1.25rem;
+}
+
+.dashboard-tab:hover {
+    color: #00ff00;
+}
+
+.dashboard-tab.active {
+    color: #00ff00;
+    border-bottom-color: #00ff00;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.dashboard-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #00ff00, transparent);
+    animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* NFT Dashboard Wrapper */
+.nft-dashboard-wrapper {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.nft-dashboard-wrapper .nft-dashboard {
+    padding: 0;
+    max-width: 100%;
 }
 
 .dashboard-content::-webkit-scrollbar {
@@ -307,6 +377,20 @@
         padding: 1rem;
     }
 
+    .dashboard-tabs {
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-tab {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .dashboard-tab span:first-child {
+        font-size: 1.1rem;
+    }
+
     .dashboard-title {
         font-size: 2rem;
         margin-top: 1rem;
@@ -354,6 +438,17 @@
 }
 
 @media screen and (max-width: 480px) {
+    .dashboard-tabs {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .dashboard-tab {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem;
+    }
+
     .dashboard-title {
         font-size: 1.5rem;
     }

@@ -83,6 +83,28 @@ export interface GameSessionWithChats {
 }
 
 // ============================================================================
+// NFT Types
+// ============================================================================
+
+export interface PlanetNFT {
+  id: number;
+  player_email: string;
+  planet_id: string;
+  planet_name: string;
+  earned_date: string;
+  minted: boolean;
+  token_id: string | null;
+  mint_signature: string | null;
+  metadata_uri: string | null;
+}
+
+export interface UpdateMintInfoRequest {
+  token_id: string;
+  mint_signature: string;
+  metadata_uri: string;
+}
+
+// ============================================================================
 // User Management
 // ============================================================================
 
@@ -343,6 +365,87 @@ export async function getGameSessionWithChats(gameId: string): Promise<GameSessi
 
   if (!response.ok) {
     throw new Error(`Failed to get game session with chats: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// ============================================================================
+// NFT Management
+// ============================================================================
+
+/**
+ * Earn an NFT (called when player wins)
+ */
+export async function earnNFT(
+  email: string,
+  planetId: string,
+  planetName: string
+): Promise<PlanetNFT> {
+  const response = await fetch(`${API_BASE_URL}/api/nfts/earn`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      player_email: email,
+      planet_id: planetId,
+      planet_name: planetName,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to earn NFT: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all earned NFTs for a player
+ */
+export async function getEarnedNFTs(email: string): Promise<PlanetNFT[]> {
+  const response = await fetch(`${API_BASE_URL}/api/nfts/earned/${email}`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to get earned NFTs: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get unminted NFTs for a player
+ */
+export async function getUnmintedNFTs(email: string): Promise<PlanetNFT[]> {
+  const response = await fetch(`${API_BASE_URL}/api/nfts/unminted/${email}`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to get unminted NFTs: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Update NFT with mint information after successful minting
+ */
+export async function updateMintInfo(
+  nftId: number,
+  tokenId: string,
+  mintSignature: string,
+  metadataUri: string
+): Promise<PlanetNFT> {
+  const response = await fetch(`${API_BASE_URL}/api/nfts/update-mint/${nftId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token_id: tokenId,
+      mint_signature: mintSignature,
+      metadata_uri: metadataUri,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update mint info: ${response.statusText}`);
   }
 
   return response.json();
