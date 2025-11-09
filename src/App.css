@@ -40,6 +40,27 @@ body,
   );
   pointer-events: none;
   z-index: 9999;
+  transition: background 0.3s ease;
+}
+
+.app.screen-flash-red::before {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 0, 0, 0.3) 0%,
+    rgba(255, 0, 0, 0.5) 40%,
+    rgba(200, 0, 0, 0.7) 70%,
+    rgba(150, 0, 0, 0.85) 100%
+  );
+  animation: screenDamageFlash 1s ease-in-out infinite;
+}
+
+@keyframes screenDamageFlash {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .app::after {
@@ -85,6 +106,143 @@ body,
 .logout-button:hover {
   background: rgba(0, 255, 0, 0.3);
   box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+/* Oxygen Bar */
+.oxygen-bar-container {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 10000;
+  font-family: "Courier New", monospace;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  transition: all 0.1s ease;
+}
+
+.oxygen-bar-container.flash-red {
+  border-color: #ff0000;
+  box-shadow: 0 0 40px rgba(255, 0, 0, 0.8);
+  animation: containerFlashRed 1s ease-in-out infinite;
+}
+
+@keyframes containerFlashRed {
+  0%, 100% {
+    border-color: #ff0000;
+    box-shadow: 0 0 40px rgba(255, 0, 0, 0.8);
+  }
+  50% {
+    border-color: #ff0000;
+    box-shadow: 0 0 60px rgba(255, 0, 0, 1);
+  }
+}
+
+.oxygen-bar-label {
+  color: #00ffff;
+  font-weight: bold;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  transition: all 0.1s ease;
+}
+
+.oxygen-bar-container.flash-red .oxygen-bar-label {
+  color: #ff0000;
+  text-shadow: 0 0 20px rgba(255, 0, 0, 1);
+}
+
+.oxygen-bar-outer {
+  width: 200px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #00ffff;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  transition: all 0.1s ease;
+}
+
+.oxygen-bar-container.flash-red .oxygen-bar-outer {
+  border-color: #ff0000;
+  box-shadow: inset 0 0 10px rgba(255, 0, 0, 0.3);
+}
+
+.oxygen-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ffff, #00cccc);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+}
+
+.oxygen-bar-fill.warning {
+  background: linear-gradient(90deg, #00ffff, #00cccc);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  animation: warningPulse 1s ease-in-out infinite;
+}
+
+.oxygen-bar-fill.critical {
+  background: linear-gradient(90deg, #00ffff, #00cccc);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  animation: criticalPulse 0.5s ease-in-out infinite;
+}
+
+.oxygen-bar-fill.flash-red {
+  background: linear-gradient(90deg, #ff0000, #cc0000) !important;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 1) !important;
+  animation: redFlash 1s ease-in-out infinite;
+}
+
+@keyframes warningPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes criticalPulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 1);
+  }
+}
+
+@keyframes redFlash {
+  0%, 100% {
+    background: linear-gradient(90deg, #ff0000, #cc0000);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 1);
+  }
+  50% {
+    background: linear-gradient(90deg, #ff3333, #ff0000);
+    box-shadow: 0 0 30px rgba(255, 0, 0, 1);
+  }
+}
+
+.oxygen-bar-percentage {
+  color: #00ffff;
+  font-weight: bold;
+  font-size: 1rem;
+  min-width: 50px;
+  text-align: right;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  transition: all 0.1s ease;
+}
+
+.oxygen-bar-container.flash-red .oxygen-bar-percentage {
+  color: #ff0000;
+  text-shadow: 0 0 20px rgba(255, 0, 0, 1);
 }
 
 .middle-section {
@@ -1353,6 +1511,23 @@ body,
 .lose-title {
   color: #ff0000;
   text-shadow: 0 0 30px #ff0000, 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.oxygen-title {
+  color: #00ffff;
+  text-shadow: 0 0 30px #00ffff, 0 2px 4px rgba(0, 0, 0, 0.8);
+  animation: oxygenFlicker 1s ease-in-out infinite;
+}
+
+@keyframes oxygenFlicker {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 30px #00ffff, 0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+  50% {
+    opacity: 0.8;
+    text-shadow: 0 0 40px #00ffff, 0 2px 4px rgba(0, 0, 0, 0.8);
+  }
 }
 
 .game-over-modal:has(.lose-title) {
