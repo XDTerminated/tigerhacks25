@@ -37,8 +37,8 @@ interface GameSession {
 function App() {
     // Trigger planet animation when game scene first loads
     const { logout, user } = useAuth0();
-    const { refreshStats } = useUser();
-    const [showIntro, setShowIntro] = useState(true);
+    const { refreshStats, playerStats, isLoading: userLoading } = useUser();
+    const [showIntro, setShowIntro] = useState<boolean | null>(null); // null = checking, true = show intro, false = skip intro
     const [introComplete, setIntroComplete] = useState(false);
     // Initialize planets synchronously so they're available on first render
     const [planets, setPlanets] = useState<Voice[]>(() => generateRandomPlanets(5));
@@ -96,7 +96,29 @@ function App() {
     const lastMultipleOf5Ref = useRef<number>(30); // Track last multiple of 5 we crossed
     const gameSessionCreatedRef = useRef<string | null>(null); // Track which game session was created in backend
 
-    // Trigger planet animation when game scene first loads
+    // Check if user is new and decide whether to show intro
+    useEffect(() => {
+        // Wait until playerStats are loaded
+        if (userLoading || !playerStats) {
+            return;
+        }
+
+        // Check if user has never played before (all stats are 0)
+        const isNewUser =
+            playerStats.correct_guesses === 0 &&
+            playerStats.correct_ejections === 0 &&
+            playerStats.incorrect_guesses === 0;
+
+        // Show intro only for new users
+        setShowIntro(isNewUser);
+
+        // If not showing intro, mark as complete immediately
+        if (!isNewUser) {
+            setIntroComplete(true);
+        }
+
+        console.log(isNewUser ? '🆕 New user detected - showing intro' : '👋 Returning user - skipping intro');
+    }, [playerStats, userLoading]);
 
     const handleIntroComplete = () => {
         setShowIntro(false);
@@ -1395,7 +1417,18 @@ function App() {
     );
 
 
-    // Show intro scene first with game scene in background
+    // Show loading while checking if user is new
+    if (showIntro === null) {
+        return (
+            <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                <div style={{ color: '#00ff00', fontFamily: 'Courier New', fontSize: '1.5rem', textShadow: '0 0 10px rgba(0, 255, 0, 0.8)' }}>
+                    Loading...
+                </div>
+            </div>
+        );
+    }
+
+    // Show intro scene first with game scene in background (only for new users)
     if (showIntro) {
         return <IntroScene onComplete={handleIntroComplete} gameSceneContent={gameSceneContent} />;
     }

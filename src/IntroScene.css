@@ -10,6 +10,13 @@
     left: 0;
     z-index: 10000;
     overflow: hidden;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbars for intro scene */
+.intro-scene::-webkit-scrollbar {
+    display: none;
 }
 
 .intro-scene.shake {

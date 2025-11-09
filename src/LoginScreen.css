@@ -6,6 +6,14 @@
   justify-content: center;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
   font-family: 'Courier New', monospace;
+  overflow: hidden;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbars for login container */
+.login-container::-webkit-scrollbar {
+  display: none;
 }
 
 .login-card {
@@ -138,5 +146,222 @@
   .login-button {
     padding: 0.6rem 1.5rem;
     font-size: 0.8rem;
+  }
+}
+
+/* Auth Modal Styles */
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.auth-modal {
+  background: rgba(0, 20, 0, 0.95);
+  border: 2px solid #00ff00;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  max-width: 420px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0, 255, 0, 0.4);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #00ff00;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  font-family: Arial, sans-serif;
+}
+
+.auth-modal-close:hover {
+  color: #00cc00;
+  transform: scale(1.1);
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+}
+
+.auth-modal-title {
+  color: #00ff00;
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+  font-weight: bold;
+}
+
+.auth-modal-description {
+  color: #00cc00;
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 0 0 2rem 0;
+  opacity: 0.9;
+}
+
+.google-login-button {
+  width: 100%;
+  background: #ffffff;
+  color: #3c4043;
+  border: 2px solid #00ff00;
+  border-radius: 6px;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+}
+
+.google-login-button:hover {
+  background: #f8f9fa;
+  box-shadow: 0 0 25px rgba(0, 255, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.google-icon {
+  flex-shrink: 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  color: #00cc00;
+  font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #00ff00;
+  opacity: 0.3;
+}
+
+.auth-divider span {
+  padding: 0 1rem;
+}
+
+.email-login-button {
+  width: 100%;
+  background: transparent;
+  color: #00ff00;
+  border: 2px solid #00ff00;
+  border-radius: 6px;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.email-login-button:hover {
+  background: rgba(0, 255, 0, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.auth-disclaimer {
+  color: #00cc00;
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 1.5rem 0 0 0;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+/* Responsive Auth Modal */
+@media screen and (max-width: 576px) {
+  .auth-modal {
+    padding: 2rem 1.5rem;
+    max-width: 360px;
+  }
+
+  .auth-modal-title {
+    font-size: 1.5rem;
+  }
+
+  .auth-modal-description {
+    font-size: 0.85rem;
+  }
+
+  .google-login-button,
+  .email-login-button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .auth-modal {
+    padding: 1.75rem 1.25rem;
+    max-width: 320px;
+  }
+
+  .auth-modal-title {
+    font-size: 1.3rem;
+  }
+
+  .auth-modal-description {
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .google-login-button,
+  .email-login-button {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .auth-disclaimer {
+    font-size: 0.7rem;
   }
 }

@@ -4,12 +4,35 @@
   box-sizing: border-box;
 }
 
+/* Force disable scrollbars on all browsers */
 html,
 body,
 #root {
   width: 100%;
   height: 100%;
   background: #000;
+  overflow: hidden;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Chrome, Safari, and Opera */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none;
+}
+
+/* Additional global scrollbar hiding */
+*::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .app {
