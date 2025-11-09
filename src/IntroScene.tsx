@@ -9,7 +9,7 @@ interface IntroSceneProps {
 }
 
 export function IntroScene({ onComplete, gameSceneContent }: IntroSceneProps) {
-    const [stage, setStage] = useState<"blackout" | "fade" | "crash" | "panel" | "database">("blackout");
+    const [stage, setStage] = useState<"blackout" | "fade" | "crash" | "panel" | "database" | "transitioning">("blackout");
     const [shake, setShake] = useState(false);
     const [showBlackOverlay, setShowBlackOverlay] = useState(true);
     const [startGlow, setStartGlow] = useState(false);
@@ -93,15 +93,18 @@ Your hull and life support are damaged. Oxygen reserves are limited. Five nearby
         if (stage === "database") {
             let cancelled = false;
 
+            // Preferred ElevenLabs voice id (ship-AI) - overridden by user input
+            const PREFERRED_SHIP_VOICE_ID = 'weA4Q36twV5kwSaTEL0Q';
+
             async function startNarration() {
                 try {
                     setIsNarrating(true);
                     setNarrationFinished(false);
                     setRevealedText("");
 
-                    // Choose a suitable voice (prefer authoritative / researcher-like voice)
+                    // Choose a suitable voice (prefer user-specified ship-AI voice if available)
                     const shipVoice = VOICES.find((v) => v.isResearcher) || VOICES[0];
-                    const voiceId = shipVoice?.id || VOICES[0].id;
+                    const voiceId = PREFERRED_SHIP_VOICE_ID || shipVoice?.id || VOICES[0].id;
 
                     // Request TTS and get audio URL
                     const audioUrl = await textToSpeech(systemMessage, voiceId);
@@ -109,13 +112,22 @@ Your hull and life support are damaged. Oxygen reserves are limited. Five nearby
 
                     // Create audio element
                     const audio = new Audio(audioUrl);
+                    // Playback rate to make the ship-AI speak faster
+                    const PREFERRED_PLAYBACK_RATE = 1.25; // 1.0 = normal, >1 faster
+                    try {
+                        audio.playbackRate = PREFERRED_PLAYBACK_RATE;
+                    } catch (err) {
+                        console.warn('Unable to set playbackRate on audio element', err);
+                    }
                     audioRef.current = audio;
 
                     // When metadata is loaded we can compute reveal timing
                     audio.onloadedmetadata = () => {
                         const duration = audio.duration || 3; // seconds
                         const totalChars = systemMessage.length || 1;
-                        const intervalMs = Math.max(10, (duration * 1000) / totalChars);
+                        // Account for playback rate when calculating reveal speed
+                        const adjustedDuration = duration / PREFERRED_PLAYBACK_RATE;
+                        const intervalMs = Math.max(15, (adjustedDuration * 1000) / totalChars);
 
                         // Start revealing characters in sync with audio duration
                         let idx = 0;
@@ -202,7 +214,11 @@ Your hull and life support are damaged. Oxygen reserves are limited. Five nearby
     };
 
     const handleDatabaseContinue = () => {
-        onComplete();
+        setStage("transitioning");
+        setShowBlackOverlay(true);
+        setTimeout(() => {
+            onComplete();
+        }, 1800); // 1.8s fade duration
     };
 
     return (
@@ -223,8 +239,8 @@ Your hull and life support are damaged. Oxygen reserves are limited. Five nearby
                 )}
             </div>
 
-            {/* Black overlay for fades */}
-            <div className={`black-overlay ${showBlackOverlay ? "visible" : "hidden"}`}></div>
+            {/* Black overlay for fades and transition */}
+            <div className={`black-overlay${stage === "transitioning" ? " fade-out" : showBlackOverlay ? " visible" : " hidden"}`}></div>
 
             {stage === "crash" && (
                 <div className="crash-overlay">
@@ -233,30 +249,36 @@ Your hull and life support are damaged. Oxygen reserves are limited. Five nearby
             )}
 
             {stage === "database" && (
-                <div className="database-fullscreen">
-                    <div className="database-header">EMERGENCY CONTACT DATABASE</div>
-                    <div className="database-content">
-                        <div className="emergency-text" style={{ whiteSpace: 'pre-wrap' }}>
-                            {revealedText || ""}
-                        </div>
-                    </div>
-                    <div className="database-footer">
-                        {isNarrating && (
-                            <button className="database-skip-btn" onClick={handleSkipNarration}>
-                                SKIP
-                            </button>
-                        )}
+                <div className="database-modal-overlay" onClick={() => { /* click outside does nothing during intro */ }}>
+                    <div className="database-modal" onClick={(e) => e.stopPropagation()}>
+                        {/* No close button here — user must read/skip then begin mission */}
+                        <div className="database-modal-content">
+                            <h2>EMERGENCY CONTACT DATABASE</h2>
 
-                        <button
-                            className="database-continue-btn"
-                            onClick={handleDatabaseContinue}
-                            disabled={!narrationFinished}
-                            title={!narrationFinished ? 'Wait for narration or skip' : 'Begin mission'}
-                        >
-                            BEGIN MISSION
+                            <div className="emergency-text" style={{ whiteSpace: 'pre-wrap' }}>
+                                {revealedText || ""}
+                            </div>
+
+                            {narrationFinished && (
+                                <div className="database-footer">
+                                    <button
+                                        className="database-continue-btn"
+                                        onClick={handleDatabaseContinue}
+                                        title="Begin mission"
+                                    >
+                                        BEGIN MISSION
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        </div>
+
+                    {isNarrating && (
+                        <button className="database-skip-btn-screen" onClick={handleSkipNarration}>
+                            SKIP
                         </button>
+                    )}
                     </div>
-                </div>
             )}
         </div>
     );
