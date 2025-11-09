@@ -36,7 +36,7 @@ interface GameSession {
 
 function App() {
     const { logout, user } = useAuth0();
-    const { userData, playerStats, refreshStats } = useUser();
+    const { refreshStats } = useUser();
     const [showIntro, setShowIntro] = useState(true);
     const [planets, setPlanets] = useState<Voice[]>([]);
     const [databaseOrder, setDatabaseOrder] = useState<number[]>([]);
@@ -113,8 +113,8 @@ function App() {
 
     // Oxygen depletion timer - natural decay
     useEffect(() => {
-        // Only deplete oxygen if game is not over
-        if (gameOver) {
+        // Only deplete oxygen if game is not over AND intro is complete
+        if (gameOver || showIntro) {
             if (oxygenTimerRef.current) {
                 clearInterval(oxygenTimerRef.current);
                 oxygenTimerRef.current = null;
@@ -157,7 +157,7 @@ function App() {
                 oxygenTimerRef.current = null;
             }
         };
-    }, [gameOver]);
+    }, [gameOver, showIntro]);
 
     // Save current planet's messages to game session whenever messages change
     useEffect(() => {
