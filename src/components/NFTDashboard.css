@@ -366,6 +366,15 @@
   animation: float 3s ease-in-out infinite;
 }
 
+.planet-svg-nft {
+  width: 100%;
+  height: auto;
+  max-width: 120px;
+  max-height: 120px;
+  filter: drop-shadow(0 4px 12px rgba(0, 255, 0, 0.3));
+  animation: float 3s ease-in-out infinite;
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
