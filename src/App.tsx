@@ -48,7 +48,7 @@ function App() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [removedPlanets, setRemovedPlanets] = useState<number[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [gameOver, setGameOver] = useState<"win" | "lose" | null>(null);
+    const [gameOver, setGameOver] = useState<"win" | "lose" | "oxygen" | null>(null);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
     const [showTooltip, setShowTooltip] = useState(false);
     const [isTransmitterClose, setIsTransmitterClose] = useState(false);
@@ -67,10 +67,14 @@ function App() {
     const [allChatLogs, setAllChatLogs] = useState<ChatLog[]>([]);
     const [nameTooltipPosition, setNameTooltipPosition] = useState({ x: 0, y: 0 });
     const [showNameTooltip, setShowNameTooltip] = useState(false);
+    const [oxygenLevel, setOxygenLevel] = useState(0.3); // Start at 30%
+    const [flashRed, setFlashRed] = useState(false);
     const { isRecording, transcript, startRecording, stopRecording } = useVoiceRecording();
     const audioRef = useRef<HTMLAudioElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const processingAudioRef = useRef<HTMLAudioElement | null>(null);
+    const oxygenTimerRef = useRef<number | null>(null);
+    const lastMultipleOf5Ref = useRef<number>(30); // Track last multiple of 5 we crossed
 
     // Generate random planets on component mount and initialize game session
     useEffect(() => {
@@ -100,6 +104,54 @@ function App() {
 
     // Define currentVoice before using it in hooks
     const currentVoice = planets.length > 0 ? planets[currentVoiceIndex] : null;
+
+    // Oxygen depletion timer - natural decay
+    useEffect(() => {
+        // Only deplete oxygen if game is not over
+        if (gameOver) {
+            if (oxygenTimerRef.current) {
+                clearInterval(oxygenTimerRef.current);
+                oxygenTimerRef.current = null;
+            }
+            return;
+        }
+
+        // Natural depletion rate: 0.3 (30%) over 6 minutes = 360 seconds
+        // Rate per second: 0.3 / 360 = 0.0008333
+        // Update every 100ms, so rate per update: 0.0008333 / 10 = 0.00008333
+        const depletionRate = 0.00008333;
+
+        oxygenTimerRef.current = window.setInterval(() => {
+            setOxygenLevel((prevLevel) => {
+                const newLevel = Math.max(0, prevLevel - depletionRate);
+                
+                // Check if we crossed a multiple of 5
+                const prevPercentage = Math.floor(prevLevel * 100);
+                const newPercentage = Math.floor(newLevel * 100);
+                
+                if (prevPercentage !== newPercentage && newPercentage % 5 === 0 && newPercentage < lastMultipleOf5Ref.current) {
+                    lastMultipleOf5Ref.current = newPercentage;
+                    setFlashRed(true);
+                    setTimeout(() => setFlashRed(false), 5000);
+                }
+                
+                // Check if oxygen depleted
+                if (newLevel <= 0 && !gameOver) {
+                    setGameOver("oxygen");
+                    return 0;
+                }
+                
+                return newLevel;
+            });
+        }, 100);
+
+        return () => {
+            if (oxygenTimerRef.current) {
+                clearInterval(oxygenTimerRef.current);
+                oxygenTimerRef.current = null;
+            }
+        };
+    }, [gameOver]);
 
     // Save current planet's messages to game session whenever messages change
     useEffect(() => {
@@ -323,6 +375,35 @@ function App() {
         if (!userMessage.trim() || isProcessing || !currentVoice) return;
 
         console.log("🎤 User message received:", userMessage);
+        
+        // Calculate oxygen cost based on message length (1-2% per message)
+        const wordCount = userMessage.trim().split(/\s+/).length;
+        const baseOxygenCost = 0.01 + (wordCount * 0.0005); // Start at 1% + 0.05% per word
+        const oxygenCost = Math.min(baseOxygenCost, 0.02); // Cap at 2%
+        
+        // Deduct oxygen
+        setOxygenLevel((prevLevel) => {
+            const newLevel = Math.max(0, prevLevel - oxygenCost);
+            console.log(`💨 Oxygen: ${(prevLevel * 100).toFixed(1)}% → ${(newLevel * 100).toFixed(1)}% (cost: ${(oxygenCost * 100).toFixed(1)}% for ${wordCount} words)`);
+            
+            // Check if we crossed a multiple of 5
+            const prevPercentage = Math.floor(prevLevel * 100);
+            const newPercentage = Math.floor(newLevel * 100);
+            
+            if (prevPercentage !== newPercentage && newPercentage % 5 === 0 && newPercentage < lastMultipleOf5Ref.current) {
+                lastMultipleOf5Ref.current = newPercentage;
+                setFlashRed(true);
+                setTimeout(() => setFlashRed(false), 5000);
+            }
+            
+            // Check if oxygen depleted
+            if (newLevel <= 0 && !gameOver) {
+                setGameOver("oxygen");
+            }
+            
+            return newLevel;
+        });
+        
         setIsProcessing(true);
         setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
 
@@ -667,6 +748,9 @@ function App() {
         setRemovedPlanets([]);
         setCurrentVoiceIndex(0);
         setMessages([]);
+        setOxygenLevel(0.3); // Reset oxygen to 30%
+        lastMultipleOf5Ref.current = 30; // Reset the multiple tracker
+        setFlashRed(false);
 
         // Generate new random planets
         const randomPlanets = generateRandomPlanets(5);
@@ -712,7 +796,7 @@ function App() {
     }
 
     return (
-        <div className="app">
+        <div className={`app ${flashRed ? 'screen-flash-red' : ''}`}>
             <button 
                 className="logout-button" 
                 onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} 
@@ -721,6 +805,19 @@ function App() {
             >
                 Logout
             </button>
+            
+            {/* Oxygen Bar */}
+            <div className={`oxygen-bar-container ${flashRed ? 'flash-red' : ''}`}>
+                <div className="oxygen-bar-label">OXYGEN</div>
+                <div className="oxygen-bar-outer">
+                    <div 
+                        className={`oxygen-bar-fill ${flashRed ? 'flash-red' : ''} ${oxygenLevel <= 0.1 ? 'critical' : oxygenLevel <= 0.2 ? 'warning' : ''}`}
+                        style={{ width: `${oxygenLevel * 100}%` }}
+                    />
+                </div>
+                <div className="oxygen-bar-percentage">{(oxygenLevel * 100).toFixed(1)}%</div>
+            </div>
+            
             {isDatabaseOpen && (
                 <div className="database-modal-overlay" onClick={handleCloseDatabaseModal}>
                     <div className="database-modal" onClick={(e) => e.stopPropagation()}>
@@ -1183,6 +1280,15 @@ function App() {
                                     You found the real researcher at {currentVoice.planetName}!
                                     <br />
                                     Your ship has landed safely.
+                                </p>
+                            </>
+                        ) : gameOver === "oxygen" ? (
+                            <>
+                                <h1 className="game-over-title oxygen-title">💀 OXYGEN DEPLETED 💀</h1>
+                                <p className="game-over-message">
+                                    You ran out of oxygen!
+                                    <br />
+                                    Your crew has suffocated in the darkness of space.
                                 </p>
                             </>
                         ) : (
