@@ -75,6 +75,7 @@ function App() {
     const processingAudioRef = useRef<HTMLAudioElement | null>(null);
     const oxygenTimerRef = useRef<number | null>(null);
     const lastMultipleOf5Ref = useRef<number>(30); // Track last multiple of 5 we crossed
+    const gameSessionCreatedRef = useRef<string | null>(null); // Track which game session was created in backend
 
     // Generate random planets on component mount and initialize game session
     useEffect(() => {
@@ -93,14 +94,20 @@ function App() {
             startTime: Date.now(),
             chatsByPlanet: {},
         });
+    }, []); // Empty dependency array - only run on mount
 
-        // Create game session in backend
-        if (user?.email) {
-            createGameSession(gameId, user.email)
-                .then(() => console.log("🎮 Game session created in backend"))
-                .catch((error) => console.error("❌ Failed to create game session:", error));
+    // Create backend session when user becomes available
+    useEffect(() => {
+        if (user?.email && currentGameSession && gameSessionCreatedRef.current !== currentGameSession.gameId) {
+            gameSessionCreatedRef.current = currentGameSession.gameId; // Mark as created immediately
+            createGameSession(currentGameSession.gameId, user.email)
+                .then(() => console.log("🎮 Game session created in backend:", currentGameSession.gameId))
+                .catch((error) => {
+                    console.error("❌ Failed to create game session:", error);
+                    gameSessionCreatedRef.current = null; // Reset on error so it can retry
+                });
         }
-    }, [user?.email]);
+    }, [user?.email, currentGameSession]); // Run when user loads or game session changes
 
     // Define currentVoice before using it in hooks
     const currentVoice = planets.length > 0 ? planets[currentVoiceIndex] : null;
@@ -768,6 +775,17 @@ function App() {
             startTime: Date.now(),
             chatsByPlanet: {},
         });
+
+        // Create game session in backend for the new game
+        if (user?.email) {
+            gameSessionCreatedRef.current = gameId; // Mark as created
+            createGameSession(gameId, user.email)
+                .then(() => console.log("🎮 New game session created in backend:", gameId))
+                .catch((error) => {
+                    console.error("❌ Failed to create game session on restart:", error);
+                    gameSessionCreatedRef.current = null; // Reset on error
+                });
+        }
     };
 
     const handleCloseChatLog = () => {
