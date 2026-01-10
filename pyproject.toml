@@ -9,6 +9,4 @@ dependencies = [
     "asyncpg>=0.30.0",
     "pydantic[email]>=2.9.0",
     "python-dotenv>=1.0.0",
-    "elevenlabs>=1.0.0",
-    "pygame>=2.5.0",
 ]

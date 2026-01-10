@@ -560,7 +560,6 @@ async def earn_planet_nft(
     planet_name: str,
 ) -> dict:
     """Create NFT record when player earns a planet, handles duplicates with ON CONFLICT"""
-    # console.log: Creating/updating planet NFT record
     nft = await conn.fetchrow(
         """
         INSERT INTO planet_nfts (player_email, planet_id, planet_name, earned_date)
@@ -583,7 +582,6 @@ async def get_earned_nfts(
     email: str,
 ) -> List[dict]:
     """Get all NFTs for a player, ordered by earned_date DESC"""
-    # console.log: Fetching all earned NFTs for player
     rows = await conn.fetch(
         """
         SELECT id, player_email, planet_id, planet_name, earned_date, minted, token_id, mint_signature, metadata_uri
@@ -601,7 +599,6 @@ async def get_unminted_nfts(
     email: str,
 ) -> List[dict]:
     """Get only unminted NFTs (minted = FALSE) for a player"""
-    # console.log: Fetching unminted NFTs for player
     rows = await conn.fetch(
         """
         SELECT id, player_email, planet_id, planet_name, earned_date, minted, token_id, mint_signature, metadata_uri
@@ -622,7 +619,6 @@ async def update_nft_mint_info(
     metadata_uri: str,
 ) -> dict:
     """Update NFT after minting with token_id, signature, and metadata_uri"""
-    # console.log: Updating NFT mint information
     nft = await conn.fetchrow(
         """
         UPDATE planet_nfts
@@ -649,7 +645,6 @@ async def get_nft_by_id(
     nft_id: int,
 ) -> dict:
     """Get single NFT by ID"""
-    # console.log: Fetching NFT by ID
     nft = await conn.fetchrow(
         """
         SELECT id, player_email, planet_id, planet_name, earned_date, minted, token_id, mint_signature, metadata_uri
@@ -965,7 +960,6 @@ async def get_researcher_logs(email: str, researcher_name: str, conn=Depends(get
 async def earn_nft(nft_data: PlanetNFTCreate, conn=Depends(get_db)):
     """Earn an NFT (called when player wins)"""
     try:
-        # console.log: Player earning planet NFT
         nft = await earn_planet_nft(
             conn, nft_data.player_email, nft_data.planet_id, nft_data.planet_name
         )
@@ -1006,7 +1000,6 @@ async def update_mint_info(
 ):
     """Update NFT with mint info after minting on Solana"""
     try:
-        # console.log: Updating NFT mint information
         nft = await update_nft_mint_info(
             conn, nft_id, mint_data.token_id, mint_data.mint_signature, mint_data.metadata_uri
         )
@@ -1037,7 +1030,6 @@ async def get_nft_by_id_endpoint(nft_id: int, conn=Depends(get_db)):
 async def upload_metadata(metadata: MetadataUploadRequest, conn=Depends(get_db)):
     """Upload metadata and return URI (placeholder implementation)"""
     try:
-        # console.log: Uploading NFT metadata
         # For now, return placeholder URI
         # Later can integrate with IPFS/Arweave
         uri = f"https://placeholder.metadata/{metadata.planet_id}"
