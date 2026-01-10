@@ -269,8 +269,6 @@ export async function endGameSession(
     planet_gravity: planetGravity,
   };
 
-  console.log('📤 Sending to backend API:', requestBody);
-
   const response = await fetch(`${API_BASE_URL}/api/game-sessions/${gameId}/end`, {
     method: 'POST',
     headers: {
@@ -279,17 +277,12 @@ export async function endGameSession(
     body: JSON.stringify(requestBody),
   });
 
-  console.log('📥 Backend response status:', response.status, response.statusText);
-
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('❌ Backend error response:', errorText);
     throw new Error(`Failed to end game session: ${response.statusText} - ${errorText}`);
   }
 
   const responseData = await response.json();
-  console.log('✅ Backend returned data:', responseData);
-
   return responseData;
 }
 

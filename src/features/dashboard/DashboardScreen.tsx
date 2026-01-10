@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { getGameSessions, type GameSession } from "./services/api";
-import { getBaseColorFromDescription } from "./utils/planetGenerator";
-import { NFTDashboard } from "./components/NFTDashboard";
+import { getGameSessions, type GameSession } from "../../services/api";
+import { getBaseColorFromDescription } from "../../utils/planetGenerator";
+import { NFTDashboard } from "../../components/NFTDashboard";
 import "./DashboardScreen.css";
 
 interface DashboardScreenProps {
@@ -19,13 +19,13 @@ export default function DashboardScreen({ onStartNewGame, onViewSession }: Dashb
     const playHoverSound = () => {
         const audio = new Audio("/Audio/pop.mp3");
         audio.volume = 0.3;
-        audio.play().catch((err) => console.log("Audio play failed:", err));
+        audio.play().catch(() => {});
     };
 
     const playClickSound = () => {
         const audio = new Audio("/Audio/ButtonClick.mp3");
         audio.volume = 0.5;
-        audio.play().catch((err) => console.log("Audio play failed:", err));
+        audio.play().catch(() => {});
     };
     const [activeTab, setActiveTab] = useState<"missions" | "nfts">("missions");
 
@@ -39,21 +39,6 @@ export default function DashboardScreen({ onStartNewGame, onViewSession }: Dashb
                 const gameSessions = await getGameSessions(user.email);
                 // Sort by start_time descending (newest first)
                 const sorted = gameSessions.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
-
-                // Log planet data for debugging
-                console.log("📊 Dashboard loaded sessions:", sorted);
-                sorted.forEach((session) => {
-                    if (session.outcome === "win") {
-                        console.log(`🎉 Win session ${session.game_id}:`, {
-                            planet: session.selected_planet,
-                            color: session.planet_color,
-                            temp: session.planet_temperature,
-                            ocean: session.planet_ocean,
-                            gravity: session.planet_gravity,
-                        });
-                    }
-                });
-
                 setSessions(sorted);
             } catch (err) {
                 console.error("Failed to load game sessions:", err);
@@ -97,7 +82,6 @@ export default function DashboardScreen({ onStartNewGame, onViewSession }: Dashb
     const renderPlanetVisualization = (session: GameSession) => {
         // Only render for winning sessions
         if (session.outcome !== "win") {
-            console.log(`⚠️ Session ${session.game_id} is not a win, skipping visualization`);
             return null;
         }
 
@@ -116,24 +100,15 @@ export default function DashboardScreen({ onStartNewGame, onViewSession }: Dashb
                     planetColor = planetData.planetColor;
                     planetTemperature = planetData.avgTemp;
                     planetOcean = planetData.oceanCoverage;
-                    console.log(`📦 Loaded planet data from localStorage for ${session.game_id}:`, planetData);
                 }
-            } catch (error) {
-                console.error("Failed to load planet data from localStorage:", error);
+            } catch {
+                // Silently handle localStorage errors
             }
         }
 
         if (!planetColor) {
-            console.log(`⚠️ Session ${session.game_id} is missing planet_color even after localStorage check:`, {
-                planet_color: session.planet_color,
-                planet_temperature: session.planet_temperature,
-                planet_ocean: session.planet_ocean,
-                planet_gravity: session.planet_gravity,
-            });
             return null;
         }
-
-        console.log(`✅ Rendering planet visualization for session ${session.game_id}`);
 
         const oceanCoverage = planetOcean ? parseInt(planetOcean) : 0;
         const planetName = session.selected_planet || "";

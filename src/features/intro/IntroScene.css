@@ -8,15 +8,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 10000;
+    z-index: var(--z-modal);
     overflow: hidden;
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-}
-
-/* Hide scrollbars for intro scene */
-.intro-scene::-webkit-scrollbar {
-    display: none;
 }
 
 .intro-scene.shake {

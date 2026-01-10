@@ -4,15 +4,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-  font-family: 'Courier New', monospace;
+  background: linear-gradient(135deg, var(--color-bg-dark) 0%, #1a1a2e 100%);
+  font-family: var(--font-mono);
   overflow: hidden;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.login-container::-webkit-scrollbar {
-  display: none;
 }
 
 .login-content {

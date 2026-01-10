@@ -7,9 +7,9 @@ import type { Voice } from "./data/voices";
 import { generateRandomPlanets, getBaseColorFromDescription } from "./utils/planetGenerator";
 import { useUser } from "./contexts/UserContext";
 import { addChatMessage, updatePlayerStats, createGameSession, endGameSession, saveGameChatLog, getResearcherChatLogs, earnNFT } from "./services/api";
-import { IntroScene } from "./IntroScene";
-import DashboardScreen from "./DashboardScreen";
-import GameSessionDetail from "./GameSessionDetail";
+import { IntroScene } from "./features/intro/IntroScene";
+import DashboardScreen from "./features/dashboard/DashboardScreen";
+import GameSessionDetail from "./features/session/GameSessionDetail";
 import "./App.css";
 
 interface Message {
@@ -129,7 +129,6 @@ function App() {
             setShowDashboard(true);
         }
 
-        console.log(isNewUser ? "🆕 New user detected - showing intro" : "👋 Returning user - showing dashboard");
     }, [playerStats, userLoading]);
 
     const handleIntroComplete = () => {
@@ -144,9 +143,8 @@ function App() {
         if (user?.email && currentGameSession && gameSessionCreatedRef.current !== currentGameSession.gameId) {
             gameSessionCreatedRef.current = currentGameSession.gameId; // Mark as created immediately
             createGameSession(currentGameSession.gameId, user.email)
-                .then(() => console.log("🎮 Game session created in backend:", currentGameSession.gameId))
                 .catch((error) => {
-                    console.error("❌ Failed to create game session:", error);
+                    console.error("Failed to create game session:", error);
                     gameSessionCreatedRef.current = null; // Reset on error so it can retry
                 });
         }
@@ -246,7 +244,6 @@ function App() {
 
                 // Save back to localStorage
                 localStorage.setItem("chatLogsByResearcher", JSON.stringify(existingLogsByResearcher));
-                console.log(`Saved ${logs.length} chat logs for game ${currentGameSession.gameId}`);
             }
         },
         [currentGameSession, planets]
@@ -276,7 +273,7 @@ function App() {
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.src = "/Audio/Transition.mp3";
-                audioRef.current.play().catch(console.error);
+                audioRef.current.play().catch(() => {});
                 audioRef.current.onended = () => {
                     setIsPlayingAudio(false);
                 };
@@ -375,7 +372,7 @@ function App() {
             if (!processingAudioRef.current) {
                 processingAudioRef.current = new Audio("/Audio/Predialouge.mp3");
                 processingAudioRef.current.loop = true;
-                processingAudioRef.current.play().catch(console.error);
+                processingAudioRef.current.play().catch(() => {});
             }
         } else {
             // Stop and clean up the processing audio
@@ -389,10 +386,8 @@ function App() {
 
     useEffect(() => {
         const processTranscript = async () => {
-            console.log("📝 Transcript changed:", transcript, "Recording:", isRecording);
             // Only process if we have a new transcript, not recording, and haven't processed this exact transcript
             if (transcript && !isRecording && transcript !== lastProcessedTranscript) {
-                console.log("✅ Processing new transcript:", transcript);
                 setLastProcessedTranscript(transcript);
                 handleUserMessage(transcript);
             }
@@ -408,8 +403,6 @@ function App() {
         const activeVoice = currentVoice;
         const activeVoiceName = activeVoice.name;
 
-        console.log("🎤 User message received:", userMessage);
-
         // Calculate oxygen cost based on message length (1-2% per message)
         const wordCount = userMessage.trim().split(/\s+/).length;
         const baseOxygenCost = 0.01 + wordCount * 0.0005; // Start at 1% + 0.05% per word
@@ -418,7 +411,6 @@ function App() {
         // Deduct oxygen
         setOxygenLevel((prevLevel) => {
             const newLevel = Math.max(0, prevLevel - oxygenCost);
-            console.log(`💨 Oxygen: ${(prevLevel * 100).toFixed(1)}% → ${(newLevel * 100).toFixed(1)}% (cost: ${(oxygenCost * 100).toFixed(1)}% for ${wordCount} words)`);
 
             // Check if we crossed a multiple of 5
             const prevPercentage = Math.floor(prevLevel * 100);
@@ -446,15 +438,13 @@ function App() {
         if (user?.email) {
             try {
                 await addChatMessage(user.email, "player", userMessage);
-                console.log("📤 User message sent to backend");
             } catch (error) {
-                console.error("❌ Failed to send user message to backend:", error);
+                console.error("Failed to send user message to backend:", error);
             }
         }
 
         try {
             // Get AI response
-            console.log("🤖 Requesting AI response...");
             const aiResponse = await getChatResponse(userMessage, {
                 planetName: activeVoice.planetName,
                 avgTemp: activeVoice.avgTemp,
@@ -465,7 +455,6 @@ function App() {
                 isResearcher: activeVoice.isResearcher,
                 correctFacts: activeVoice.correctFacts,
             });
-            console.log("✅ AI response received:", aiResponse);
             const assistantMsg: Message = { role: "assistant", content: aiResponse };
             setMessages((prev) => [...prev, assistantMsg]);
 
@@ -485,32 +474,25 @@ function App() {
             if (user?.email) {
                 try {
                     await addChatMessage(user.email, activeVoice.name, aiResponse);
-                    console.log("📤 AI response sent to backend");
                 } catch (error) {
-                    console.error("❌ Failed to send AI response to backend:", error);
+                    console.error("Failed to send AI response to backend:", error);
                 }
             }
 
             // Convert to speech and play
-            console.log("🔊 Converting text to speech...");
             const audioUrl = await textToSpeech(aiResponse, activeVoice.id);
-            console.log("✅ Audio URL generated:", audioUrl);
 
             if (audioRef.current) {
-                console.log("🎵 Setting audio source and attempting to play...");
                 audioRef.current.src = audioUrl;
                 setIsPlayingAudio(true);
                 try {
                     await audioRef.current.play();
-                    console.log("✅ Audio playback started successfully!");
                 } catch (playError) {
-                    console.error("❌ Audio play error:", playError);
+                    console.error("Audio play error:", playError);
                 }
-            } else {
-                console.error("❌ Audio ref is null!");
             }
         } catch (error) {
-            console.error("❌ Error processing message:", error);
+            console.error("Error processing message:", error);
             setMessages((prev) => [
                 ...prev,
                 {
@@ -524,12 +506,10 @@ function App() {
     };
 
     const handleAudioEnded = () => {
-        console.log("🔇 Audio playback ended");
         setIsPlayingAudio(false);
     };
 
     const handleDatabaseClick = async () => {
-        console.log("Database clicked!");
         setIsDatabaseOpen(true);
 
         // Switch transmitter from close to far when database is opened
@@ -542,9 +522,9 @@ function App() {
         if (!isProcessing && !isPlayingAudio) {
             try {
                 const audio = new Audio("/Audio/Planetary.mp3");
-                audio.play().catch(console.error);
-            } catch (error) {
-                console.error("Error playing planetary audio:", error);
+                audio.play().catch(() => {});
+            } catch {
+                // Silently handle audio errors
             }
         }
     };
@@ -553,7 +533,7 @@ function App() {
         // Play button click sound (only if not playing chatbot audio)
         if (!isPlayingAudio && !isProcessing) {
             const audio = new Audio("/Audio/ButtonClick.mp3");
-            audio.play().catch(console.error);
+            audio.play().catch(() => {});
         }
 
         setIsDatabaseOpen(false);
@@ -564,7 +544,7 @@ function App() {
         // Play button click sound (only if not playing chatbot audio)
         if (!isPlayingAudio && !isProcessing) {
             const audio = new Audio("/Audio/ButtonClick.mp3");
-            audio.play().catch(console.error);
+            audio.play().catch(() => {});
         }
 
         if (direction === "prev") {
@@ -579,7 +559,7 @@ function App() {
         if (audioRef.current) {
             audioRef.current.pause();
             audioRef.current.src = "/Audio/ButtonClick.mp3";
-            audioRef.current.play().catch(console.error);
+            audioRef.current.play().catch(() => {});
             audioRef.current.onended = () => {
                 setIsPlayingAudio(false);
             };
@@ -595,10 +575,9 @@ function App() {
                         email: user.email,
                         correct_ejections: 1,
                     });
-                    console.log("📊 Stats updated: +1 correct ejection");
                     await refreshStats();
                 } catch (error) {
-                    console.error("❌ Failed to update ejection stats:", error);
+                    console.error("Failed to update ejection stats:", error);
                 }
             }
 
@@ -664,7 +643,6 @@ function App() {
                     outcome: outcome,
                 };
                 localStorage.setItem(planetDataKey, JSON.stringify(planetData));
-                console.log("💾 Saved planet data to localStorage:", planetData);
             } catch (error) {
                 console.error("Failed to save planet data to localStorage:", error);
             }
@@ -688,18 +666,9 @@ function App() {
                 });
 
                 await Promise.all(savePromises);
-                console.log("💾 Game chat logs saved to backend");
 
                 // End game session with planet properties
-                console.log("🌍 Sending planet data to backend:", {
-                    planetName: planet.planetName,
-                    planetColor: planet.planetColor,
-                    avgTemp: planet.avgTemp,
-                    oceanCoverage: planet.oceanCoverage,
-                    gravity: planet.gravity,
-                });
                 await endGameSession(currentGameSession.gameId, outcome, planet.name, planet.planetName, planet.planetColor, planet.avgTemp, planet.oceanCoverage, planet.gravity);
-                console.log("🏁 Game session ended in backend");
 
                 // Update player stats
                 if (outcome === "win") {
@@ -707,17 +676,14 @@ function App() {
                         email: user.email,
                         correct_guesses: 1,
                     });
-                    console.log("📊 Stats updated: +1 correct guess");
 
                     // Award NFT for winning
                     try {
                         // Generate unique planet ID based on planet name and timestamp
                         const planetId = `${planet.planetName.toLowerCase().replace(/\s+/g, "_")}_${Date.now()}`;
-
                         await earnNFT(user.email, planetId, planet.planetName);
-                        console.log("🎁 NFT earned for winning!");
                     } catch (error) {
-                        console.error("❌ Failed to earn NFT:", error);
+                        console.error("Failed to earn NFT:", error);
                         // Don't block game flow if NFT earning fails
                     }
                 } else {
@@ -725,13 +691,12 @@ function App() {
                         email: user.email,
                         incorrect_guesses: 1,
                     });
-                    console.log("📊 Stats updated: +1 incorrect guess");
                 }
 
                 // Refresh stats in context
                 await refreshStats();
             } catch (error) {
-                console.error("❌ Failed to save game data to backend:", error);
+                console.error("Failed to save game data to backend:", error);
             }
         }
 
@@ -744,7 +709,6 @@ function App() {
         try {
             // Load chat logs from backend for this researcher
             const backendLogs = await getResearcherChatLogs(user.email, currentVoice.name);
-            console.log("📋 Backend chat logs for researcher:", backendLogs);
 
             // Convert backend format to local ChatLog format
             const researcherLogs: ChatLog[] = backendLogs.map((log) => ({
@@ -775,17 +739,14 @@ function App() {
                 researcherLogs.unshift(currentLog);
             }
 
-            console.log(`📋 Chat logs for ${currentVoice.name}:`, researcherLogs);
-            console.log(`📋 Number of conversations: ${researcherLogs.length}`);
-
             setAllChatLogs(researcherLogs);
             setIsChatLogOpen(true);
 
             // Play planetary database audio when opening chat log
             const audio = new Audio("/Audio/Planetary.mp3");
-            audio.play().catch(console.error);
+            audio.play().catch(() => {});
         } catch (error) {
-            console.error("❌ Failed to load researcher chat logs:", error);
+            console.error("Failed to load researcher chat logs:", error);
 
             // Fallback to localStorage if backend fails
             const logsStr = localStorage.getItem("chatLogsByResearcher");
@@ -809,7 +770,7 @@ function App() {
 
             // Play planetary database audio when opening chat log (fallback case)
             const audio = new Audio("/Audio/Planetary.mp3");
-            audio.play().catch(console.error);
+            audio.play().catch(() => {});
         }
     };
 
@@ -866,9 +827,8 @@ function App() {
         if (user?.email) {
             gameSessionCreatedRef.current = gameId; // Mark as created
             createGameSession(gameId, user.email)
-                .then(() => console.log("🎮 New game session created in backend:", gameId))
                 .catch((error) => {
-                    console.error("❌ Failed to create game session on restart:", error);
+                    console.error("Failed to create game session on restart:", error);
                     gameSessionCreatedRef.current = null; // Reset on error
                 });
         }
@@ -888,7 +848,7 @@ function App() {
         // Play button click sound (only if not playing chatbot audio)
         if (!isPlayingAudio && !isProcessing) {
             const audio = new Audio("/Audio/ButtonClick.mp3");
-            audio.play().catch(console.error);
+            audio.play().catch(() => {});
         }
 
         setIsChatLogOpen(false);
@@ -897,7 +857,7 @@ function App() {
     const playHoverSound = () => {
         const audio = new Audio("/Audio/pop.mp3");
         audio.volume = 0.3; // Lower volume for hover sounds
-        audio.play().catch(console.error);
+        audio.play().catch(() => {});
     };
 
     // Map database index to actual planet index using randomized order

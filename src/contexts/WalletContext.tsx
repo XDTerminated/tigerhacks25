@@ -9,7 +9,8 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { ConnectionProvider, WalletProvider, useWallet } from "@solana/wallet-adapter-react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { WalletModalProvider, WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import { clusterApiUrl } from "@solana/web3.js";
 import type { Transaction, VersionedTransaction } from "@solana/web3.js";
 import { solanaService } from "../services/solana";
@@ -50,7 +51,6 @@ function WalletContextInner({ children }: { children: ReactNode }) {
      */
     const mintEarnedNFTs = useCallback(async () => {
         if (!isConnected || !user?.email || !wallet || !publicKey) {
-            console.log("Cannot mint: wallet not connected or user not logged in");
             return;
         }
 
@@ -58,24 +58,18 @@ function WalletContextInner({ children }: { children: ReactNode }) {
         setError(null);
 
         try {
-            console.log("🔍 Checking for unminted NFTs...");
-
             // Get unminted NFTs from backend
             const unmintedNFTs = await getUnmintedNFTs(user.email);
 
             if (unmintedNFTs.length === 0) {
-                console.log("✅ No unminted NFTs to mint");
                 setIsLoading(false);
                 return;
             }
-
-            console.log(`📦 Found ${unmintedNFTs.length} unminted NFT(s)`);
 
             // Create Anchor wallet adapter - using type assertion to match Anchor's Wallet interface
             const anchorWallet = {
                 publicKey: publicKey,
                 signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
-                    // The wallet adapter will handle signing
                     if (wallet.adapter && "signTransaction" in wallet.adapter) {
                         return await wallet.adapter.signTransaction(tx);
                     }
@@ -92,8 +86,6 @@ function WalletContextInner({ children }: { children: ReactNode }) {
             // Mint each NFT
             for (const nft of unmintedNFTs) {
                 try {
-                    console.log(`🎨 Minting NFT: ${nft.planet_name} (ID: ${nft.id})`);
-
                     // Prepare metadata
                     const metadata = {
                         planet_id: nft.planet_id,
@@ -104,22 +96,16 @@ function WalletContextInner({ children }: { children: ReactNode }) {
                     // Mint NFT
                     const result = await solanaService.mintPlanetNFT(anchorWallet, nft.planet_id, nft.planet_name, metadata);
 
-                    console.log("✅ NFT minted successfully:", result);
-
                     // Update backend with mint info
                     await updateMintInfo(nft.id, result.tokenId, result.signature, result.metadataUri);
-
-                    console.log(`✅ Updated backend for NFT ${nft.id}`);
                 } catch (error) {
-                    console.error(`❌ Failed to mint NFT ${nft.id}:`, error);
+                    console.error(`Failed to mint NFT ${nft.id}:`, error);
                     // Continue with next NFT instead of failing completely
                 }
             }
-
-            console.log("🎉 Finished minting process");
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            console.error("❌ Error minting earned NFTs:", errorMessage);
+            console.error("Error minting earned NFTs:", errorMessage);
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -140,28 +126,24 @@ function WalletContextInner({ children }: { children: ReactNode }) {
             if (!isMounted) return;
             try {
                 await mintEarnedNFTs();
-            } catch (error) {
+            } catch {
                 // Silently handle errors in periodic check
-                console.error("Error in periodic NFT check:", error);
             }
         };
-
-        console.log("🔌 Wallet connected, will check for unminted NFTs...");
 
         // Initial check after wallet connects (with small delay)
         initialTimer = setTimeout(() => {
             if (isMounted) {
                 checkAndMint();
             }
-        }, 2000); // Increased delay to 2 seconds
+        }, 2000);
 
         // Then check every minute (60000ms)
         intervalTimer = setInterval(() => {
             if (isMounted) {
-                console.log("⏰ Periodic check for unminted NFTs (every minute)...");
                 checkAndMint();
             }
-        }, 60000); // 1 minute
+        }, 60000);
 
         return () => {
             isMounted = false;

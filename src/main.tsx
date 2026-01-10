@@ -2,9 +2,10 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import App from "./App.tsx";
-import LoginScreen from "./LoginScreen.tsx";
+import LoginScreen from "./features/auth/LoginScreen.tsx";
 import { UserProvider } from "./contexts/UserContext.tsx";
 import { WalletContextProvider } from "./contexts/WalletContext.tsx";
+import "./styles/base.css";
 
 export function AppWithAuth() {
     const { isLoading, isAuthenticated } = useAuth0();

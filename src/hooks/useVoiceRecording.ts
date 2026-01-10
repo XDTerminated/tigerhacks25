@@ -64,45 +64,28 @@ export function useVoiceRecording() {
         }
 
         const recognition = new SpeechRecognitionConstructor();
-        recognition.continuous = true; // Keep listening
-        recognition.interimResults = true; // Show interim results
+        recognition.continuous = true;
+        recognition.interimResults = true;
         recognition.lang = "en-US";
         recognition.maxAlternatives = 1;
 
         recognition.onresult = (event: SpeechRecognitionEvent) => {
-            console.log("🎤 Recognition event triggered");
-
-            // Get the latest result
             const last = event.results.length - 1;
-            const transcript = event.results[last][0].transcript;
+            const result = event.results[last][0].transcript;
             const isFinal = event.results[last].isFinal;
 
-            console.log("🎤 Speech recognized:", transcript);
-            console.log("🎤 Is final:", isFinal);
-            console.log("Confidence:", event.results[last][0].confidence);
-
-            // Update transcript with interim results
             if (isFinal) {
-                console.log("🎤 Final transcript, setting state...");
-                setTranscript(transcript);
-            } else {
-                console.log("🎤 Interim result:", transcript);
+                setTranscript(result);
             }
         };
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-            console.error("❌ Speech recognition error:", event.error);
-            console.error("Error details:", event);
+            console.error("Speech recognition error:", event.error);
             setIsRecording(false);
         };
 
         recognition.onend = () => {
-            console.log("🎤 Speech recognition ended");
             setIsRecording(false);
-        };
-
-        recognition.onstart = () => {
-            console.log("🎤 Speech recognition started successfully");
         };
 
         recognitionRef.current = recognition;
@@ -116,7 +99,6 @@ export function useVoiceRecording() {
 
     const startRecording = () => {
         if (recognitionRef.current && !isRecording) {
-            console.log("🎙️ Starting voice recording...");
             setTranscript("");
             recognitionRef.current.start();
             setIsRecording(true);
@@ -125,7 +107,6 @@ export function useVoiceRecording() {
 
     const stopRecording = () => {
         if (recognitionRef.current && isRecording) {
-            console.log("🛑 Manually stopping recording...");
             recognitionRef.current.stop();
             setIsRecording(false);
         }

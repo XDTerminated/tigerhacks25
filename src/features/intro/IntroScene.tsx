@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import "./IntroScene.css";
-import { textToSpeech } from "./services/elevenlabs";
-import { VOICES } from "./data/voices";
+import { textToSpeech } from "../../services/elevenlabs";
+import { VOICES } from "../../data/voices";
 
 interface IntroSceneProps {
     onComplete: () => void;
@@ -51,8 +51,8 @@ export function IntroScene({ onComplete, gameSceneContent }: IntroSceneProps) {
         // Play crash sound effect 0.5 seconds before shake
         const crashSoundTimer = setTimeout(() => {
             const crashAudio = new Audio("/Audio/car-crash-sound-effect-376874.mp3");
-            crashAudio.volume = 0.7; // Adjust volume as needed
-            crashAudio.play().catch(console.error);
+            crashAudio.volume = 0.7;
+            crashAudio.play().catch(() => {});
         }, 7000);
 
         // Crash happens while screen is black
@@ -78,7 +78,7 @@ export function IntroScene({ onComplete, gameSceneContent }: IntroSceneProps) {
                 const oxygenAudio = new Audio("/Audio/OxygenError.mp3");
                 oxygenAudio.volume = 0.5;
                 oxygenErrorAudioRef.current = oxygenAudio;
-                oxygenAudio.play().catch(console.error);
+                oxygenAudio.play().catch(() => {});
 
                 // Turn off red flash after 0.5 seconds
                 setTimeout(() => setShowRedFlash(false), 500);
@@ -159,8 +159,8 @@ Your hull and life support are damaged. Oxygen reserves are limited. Five nearby
                     const PREFERRED_PLAYBACK_RATE = 1.25; // 1.0 = normal, >1 faster
                     try {
                         audio.playbackRate = PREFERRED_PLAYBACK_RATE;
-                    } catch (err) {
-                        console.warn("Unable to set playbackRate on audio element", err);
+                    } catch {
+                        // Silently handle playbackRate errors
                     }
                     audioRef.current = audio;
 
@@ -205,15 +205,13 @@ Your hull and life support are damaged. Oxygen reserves are limited. Five nearby
                     // Play the audio
                     try {
                         await audio.play();
-                    } catch (err) {
-                        console.error("Audio play failed:", err);
+                    } catch {
                         // If playback fails, reveal text immediately
                         setRevealedText(systemMessage);
                         setIsNarrating(false);
                         setNarrationFinished(true);
                     }
-                } catch (error) {
-                    console.error("Failed to start narration:", error);
+                } catch {
                     setRevealedText(systemMessage);
                     setIsNarrating(false);
                     setNarrationFinished(true);

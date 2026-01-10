@@ -9,13 +9,13 @@ export default function LoginScreen() {
     const playHoverSound = () => {
         const audio = new Audio("/Audio/pop.mp3");
         audio.volume = 0.3;
-        audio.play().catch(err => console.log("Audio play failed:", err));
+        audio.play().catch(() => {});
     };
 
     const playClickSound = () => {
         const audio = new Audio("/Audio/ButtonClick.mp3");
         audio.volume = 0.5;
-        audio.play().catch(err => console.log("Audio play failed:", err));
+        audio.play().catch(() => {});
     };
 
     const handleGoogleLogin = () => {

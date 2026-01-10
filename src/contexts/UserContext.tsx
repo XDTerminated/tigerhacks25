@@ -39,25 +39,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
             setError(null);
 
             try {
-                console.log("📡 Fetching user data for:", user.email);
-
                 // Create or get user (updates last_login)
                 const userResponse = await createOrGetUser(user.email);
                 setUserData(userResponse);
-                console.log("✅ User data loaded:", userResponse);
 
                 // Get player stats
                 const stats = await getPlayerStats(user.email);
                 setPlayerStats(stats);
-                console.log("✅ Player stats loaded:", stats);
 
                 // Get chat history
                 const history = await getChatHistory(user.email);
                 setChatHistory(history);
-                console.log("✅ Chat history loaded:", history.length, "messages");
             } catch (err) {
                 const errorMsg = err instanceof Error ? err.message : "Failed to fetch user data";
-                console.error("❌ Error fetching user data:", errorMsg);
+                console.error("Error fetching user data:", errorMsg);
                 setError(errorMsg);
             } finally {
                 setIsLoading(false);
@@ -74,9 +69,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         try {
             const stats = await getPlayerStats(user.email);
             setPlayerStats(stats);
-            console.log("🔄 Stats refreshed:", stats);
         } catch (err) {
-            console.error("❌ Error refreshing stats:", err);
+            console.error("Error refreshing stats:", err);
         }
     };
 
@@ -87,9 +81,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         try {
             const history = await getChatHistory(user.email);
             setChatHistory(history);
-            console.log("🔄 Chat history refreshed:", history.length, "messages");
         } catch (err) {
-            console.error("❌ Error refreshing chat history:", err);
+            console.error("Error refreshing chat history:", err);
         }
     };
 

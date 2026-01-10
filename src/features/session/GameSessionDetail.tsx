@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getGameSessionWithChats, type GameSessionWithChats } from "./services/api";
+import { getGameSessionWithChats, type GameSessionWithChats } from "../../services/api";
 import "./GameSessionDetail.css";
 
 interface GameSessionDetailProps {
