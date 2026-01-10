@@ -1,6 +1,6 @@
 # Planetary Researchers - Voice Chat Game
 
-An interactive voice chat application where you interview 10 different planetary researchers to identify who is telling the truth about their planet's characteristics.
+An interactive voice chat application where you interview 10 different planetary researchers to identify who is telling the truth about their planet's characteristics. Win to earn NFT rewards on Solana!
 
 ## Game Concept
 
@@ -10,47 +10,107 @@ Talk to 10 planetary researchers, each claiming to be from a different planet. E
 - Ocean coverage percentage
 - Gravity
 
-**The Challenge**: 9 of the 10 researchers are imposters who know some facts correctly but lie about others. Only ONE researcher (Voice 6 - Earth Research Station) tells the complete truth about all four facts.
+**The Challenge**: 9 of the 10 researchers are imposters who know some facts correctly but lie about others. Only ONE researcher tells the complete truth about all four facts.
 
 Each imposter knows 2 facts correctly and lies about the other 2 facts. Use your conversational skills to identify inconsistencies and find the trustworthy researcher!
 
+## Monorepo Structure
+
+```
+tigerhacks25/
+├── apps/
+│   ├── web/                 # React/Vite frontend
+│   │   ├── src/
+│   │   ├── public/
+│   │   └── package.json
+│   └── api/                 # FastAPI backend
+│       ├── main.py
+│       ├── migrations/
+│       ├── planet-nft/      # Solana Anchor program
+│       └── pyproject.toml
+├── packages/                # Shared packages (future)
+├── turbo.json              # Turborepo configuration
+├── pnpm-workspace.yaml     # pnpm workspaces
+└── package.json            # Root scripts
+```
+
 ## Tech Stack
 
-- **React 19** + **TypeScript** + **Vite** - Modern frontend framework
-- **Google Gemini AI** - Powers conversational AI responses
-- **ElevenLabs** - Text-to-speech for voice synthesis
-- **Web Speech API** - Voice recognition for user input
+**Frontend (`apps/web`)**
+- React 19 + TypeScript + Vite
+- Google Gemini AI (conversational responses)
+- ElevenLabs (text-to-speech)
+- Web Speech API (voice recognition)
+- Solana wallet adapters
+- Auth0 authentication
+
+**Backend (`apps/api`)**
+- Python FastAPI
+- PostgreSQL (via Neon.tech)
+- AsyncPG for async database operations
+
+**Blockchain (`apps/api/planet-nft`)**
+- Solana (devnet)
+- Anchor Framework
+- Metaplex Token Metadata
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v18+)
-- npm or pnpm
-- API keys for:
-  - Google Gemini API
-  - ElevenLabs API
+- Node.js 18+
+- pnpm 9+
+- Python 3.11+
 
 ### Installation
 
-1. Clone the repository
-2. Install dependencies:
+```bash
+# Install pnpm if not installed
+npm install -g pnpm
+
+# Install all dependencies
+pnpm install
+
+# Install Python dependencies
+cd apps/api && pip install -e .
+```
+
+### Environment Setup
+
+1. Copy environment templates:
    ```bash
-   npm install
+   cp apps/web/.env.example apps/web/.env
+   cp apps/api/.env.example apps/api/.env
    ```
 
-3. Create a `.env` file in the root directory (use `.env.example` as template):
-   ```env
-   VITE_GEMINI_API_KEY=your_gemini_api_key_here
-   VITE_ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
-   ```
+2. Fill in your API keys:
+   - `VITE_GEMINI_API_KEY` - Google Gemini API
+   - `VITE_ELEVENLABS_API_KEY` - ElevenLabs API
+   - `VITE_AUTH0_DOMAIN` / `VITE_AUTH0_CLIENT_ID` - Auth0
+   - `DATABASE_URL` - PostgreSQL connection string
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+### Development
 
-5. Open your browser to the URL shown in the terminal
+```bash
+# Run all apps in development mode
+pnpm dev
+
+# Run only frontend
+pnpm dev:web
+
+# Run only backend
+pnpm dev:api
+```
+
+### Build
+
+```bash
+# Build all apps
+pnpm build
+
+# Build only frontend
+pnpm build:web
+```
 
 ## How to Play
 
@@ -60,26 +120,14 @@ Each imposter knows 2 facts correctly and lies about the other 2 facts. Use your
 4. Take notes about what each researcher tells you
 5. Compare answers to find contradictions
 6. Identify the one truthful researcher!
+7. Win to earn a Planet NFT on Solana
 
-## Project Structure
+## Scripts
 
-```
-src/
-├── data/
-│   ├── marsFacts.ts      # AI prompt generation logic
-│   └── voices.ts         # Voice/character definitions
-├── hooks/
-│   └── useVoiceRecording.ts  # Voice recording custom hook
-├── services/
-│   ├── elevenlabs.ts     # Text-to-speech service
-│   └── gemini.ts         # AI chat service
-├── App.tsx               # Main application component
-└── main.tsx              # Application entry point
-```
-
-## Development
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run lint` - Run ESLint
-- `npm run preview` - Preview production build
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start all apps in dev mode |
+| `pnpm dev:web` | Start frontend only |
+| `pnpm dev:api` | Start backend only |
+| `pnpm build` | Build all apps |
+| `pnpm lint` | Lint all apps |
